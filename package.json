@@ -1,0 +1,15 @@
+{
+  "name": "shadow-dev-cli",
+  "version": "1.0.0",
+  "description": "Deterministic scaffolding CLI for the Shadow dev workflow: brief lifecycle, plan/execute with plan hashes, git and GitHub operations.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "shadow-dev": "cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}
