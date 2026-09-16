@@ -3,12 +3,13 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
-const CLI = new URL('../cli.mjs', import.meta.url)
+const CLI = fileURLToPath(new URL('../cli.mjs', import.meta.url))
 
 function run(args, cwd = process.cwd(), env = {}) {
-  return spawnSync(process.execPath, [CLI.pathname, ...args], {
+  return spawnSync(process.execPath, [CLI, ...args], {
     cwd,
     encoding: 'utf8',
     env: { ...process.env, ...env },
@@ -60,7 +61,7 @@ server.listen(0, '127.0.0.1', () => writeFileSync(process.env.PORT_FILE, String(
 
 function addOrigin(root) {
   const remote = mkdtempSync(join(tmpdir(), 'shadow-remote-'))
-  execFileSync('git', ['init', '--bare'], { cwd: remote })
+  execFileSync('git', ['init', '--bare', '-b', 'main'], { cwd: remote })
   execFileSync('git', ['remote', 'add', 'origin', remote], { cwd: root })
   execFileSync('git', ['push', '-u', 'origin', 'main'], { cwd: root })
   return remote
