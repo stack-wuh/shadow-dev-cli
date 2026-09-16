@@ -1,43 +1,70 @@
 #!/usr/bin/env node
-import { createHash } from 'node:crypto'
-import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { request } from 'node:http'
-import { request as requestHttps } from 'node:https'
-import { dirname, join } from 'node:path'
-const EXIT={input:1,confirmation:2,external:3,unsupported:4};const DOMAINS=new Set(['branch','sync','review','commit','publish','release','reconcile','archive','issue'])
-const HELP='repo inspect\nchange create|approve\nissue plan|execute\nbranch plan|execute\nsync plan|execute\nconflict inspect\ntask list|set\nreview plan|execute\ncommit plan|execute\npublish plan|execute\nrelease plan|execute\npr inspect\nreconcile plan|execute\narchive plan|execute\nindex rebuild plan|execute'
-function args(a){const p=[],o={};for(let i=0;i<a.length;i++){if(!a[i].startsWith('--'))p.push(a[i]);else{const k=a[i].slice(2);if(['confirm','json'].includes(k))o[k]=true;else o[k]=a[++i]}}return{p,o}}
-function out(v,s=0){console.log(JSON.stringify(v));process.exitCode=s}function fail(c,m=c,s=1){out({ok:false,error:{code:c,message:m}},s)}
-function git(r,a,o={}){return execFileSync('git',a,{cwd:r,encoding:'utf8',stdio:['ignore','pipe','pipe'],...o}).trim()}function root(){try{return git(process.cwd(),['rev-parse','--show-toplevel'])}catch{throw Error('NOT_GIT_REPOSITORY')}}
-function canon(v){if(Array.isArray(v))return`[${v.map(canon)}]`;if(v&&typeof v==='object')return`{${Object.keys(v).sort().map(k=>`${JSON.stringify(k)}:${canon(v[k])}`)}}`;return JSON.stringify(v)}function hash(v){return createHash('sha256').update(canon(v)).digest('hex')}function norm(d){if(!d||typeof d!=='object'||!d.brief||!d.brief.workflow)return d;const v={...d,brief:{...d.brief,workflow:{...d.brief.workflow}}};delete v.brief.workflow.planHash;delete v.brief.workflow.release;delete v.brief.workflow.issuePlan;return v}function plan(c,d){return{ok:true,command:`${c}.plan`,planHash:hash({command:c,data:norm(d)}),data:d}}
-const ap=(r,n)=>join(r,'shadow-docs','changes',n,'brief.md'),xp=(r,n)=>join(r,'shadow-docs','changes','archive',n,'brief.md')
-function brief(r,n,arch=false){const path=arch?xp(r,n):ap(r,n);if(!existsSync(path))throw Error('BRIEF_NOT_FOUND');const t=readFileSync(path,'utf8'),e=t.indexOf('\n---\n',4);if(e<0)throw Error('BRIEF_FRONTMATTER_REQUIRED');return{path,data:JSON.parse(t.slice(4,e)),body:t.slice(e+5)}}
-function write(b){mkdirSync(dirname(b.path),{recursive:true});const t=b.path+`.tmp-${process.pid}`;writeFileSync(t,`---\n${JSON.stringify(b.data,null,2)}\n---\n${b.body}`);renameSync(t,b.path)}
-function tasks(s){return[...s.matchAll(/^\s*- \[([ xX])\]\s+(.+)$/gm)].map((m,i)=>({id:`task-${i+1}`,done:m[1].toLowerCase()==='x',text:m[2]}))}function repo(r){const s=git(r,['status','--porcelain']);return{root:r,branch:git(r,['branch','--show-current']),head:git(r,['rev-parse','HEAD']),clean:!s,changedFiles:s?s.split('\n').map(x=>x.slice(3)).sort():[]}}
-function confirm(o,ph=false){if(!o.confirm)throw Object.assign(Error('CONFIRMATION_REQUIRED'),{status:2});if(ph&&!o['plan-hash'])throw Object.assign(Error('PLAN_HASH_REQUIRED'),{status:2})}function name(o){if(!o.name)throw Error('NAME_REQUIRED');return o.name}
-function readBody(o,n){if(!o['body-file'])return`\n# ${n}\n\n## 任务\n\n`;const p=o['body-file'];if(!existsSync(p))throw Error('BODY_FILE_NOT_FOUND');const c=readFileSync(p,'utf8').trim();if(!c)throw Error('BODY_FILE_EMPTY');return`\n${c}\n`}
-function ext(c,m=c){throw Object.assign(Error(m),{code:c,status:3})}function token(){const t=process.env.GITHUB_TOKEN||process.env.GH_TOKEN;if(!t)ext('GITHUB_TOKEN_REQUIRED');return t}
-function api(path,init={}){const base=new URL(process.env.SHADOW_GITHUB_API_URL||'https://api.github.com'),body=init.body||null,ms=Number(process.env.SHADOW_API_TIMEOUT_MS||15000),send=base.protocol==='https:'?requestHttps:request;return new Promise((resolve,reject)=>{const req=send(new URL(path,base),{method:init.method||'GET',headers:{accept:'application/vnd.github+json',authorization:`Bearer ${token()}`,'content-type':'application/json','user-agent':'shadow-dev',...(body?{'content-length':Buffer.byteLength(body)}:{})}},res=>{let raw='';res.setEncoding('utf8');res.on('data',chunk=>{raw+=chunk});res.on('end',()=>{clearTimeout(timer);let parsed={};try{parsed=raw?JSON.parse(raw):{}}catch{}if(res.statusCode<200||res.statusCode>=300)return reject(Object.assign(Error(parsed.message||`HTTP ${res.statusCode}`),{code:'GITHUB_API_ERROR',status:3}));resolve(parsed)})});const timer=setTimeout(()=>req.destroy(new Error('API_TIMEOUT')),ms);req.on('error',error=>{clearTimeout(timer);reject(Object.assign(Error(error.message),{code:error.message==='API_TIMEOUT'?'API_TIMEOUT':'GITHUB_API_ERROR',status:3}))});if(body)req.write(body);req.end()})}
-function repository(b,r){if(b.data.github?.repository)return b.data.github.repository;if(r){let u=null;try{u=git(r,['remote','get-url','origin'])}catch{}const m=u&&u.match(/github\.com[:/](.+?)(?:\.git)?\/?$/);if(m)return m[1];if(u)throw Object.assign(Error(`GITHUB_REPOSITORY_REQUIRED: origin (${u}) is not a GitHub remote; set --repository or brief.github.repository`),{code:'GITHUB_REPOSITORY_REQUIRED'})}throw Error('GITHUB_REPOSITORY_REQUIRED')}async function pr(b,r){const n=Number(b.data.github?.pullRequest);if(!n)throw Error('PULL_REQUEST_REQUIRED');return api(`/repos/${repository(b,r)}/pulls/${n}`)}
-async function ensurePr(x){const qs=new URLSearchParams({state:'open',head:`${x.repository.split('/')[0]}:${x.branch}`,base:x.baseBranch}),found=await api(`/repos/${x.repository}/pulls?${qs}`);if(found[0])return{pr:found[0],created:false};try{const z=await api(`/repos/${x.repository}/pulls`,{method:'POST',body:JSON.stringify({title:x.title,body:x.body,head:x.branch,base:x.baseBranch})});return{pr:z,created:true}}catch(e){throw Object.assign(Error(`PR_CREATE_FAILED: ${e.message}`),{code:'PR_CREATE_FAILED',status:3})}}
-function index(r){const rows=[],base=join(r,'shadow-docs','changes');for(const a of [false,true]){const d=a?join(base,'archive'):base;if(!existsSync(d))continue;for(const e of readdirSync(d,{withFileTypes:true}).filter(x=>x.isDirectory()&&(a||x.name!=='archive'))){try{const b=brief(r,e.name,a);rows.push({n:e.name,s:a?'✅ 完成':b.data.status,p:`shadow-docs/changes/${a?'archive/':''}${e.name}/brief.md`})}catch{}}}rows.sort((a,b)=>a.n.localeCompare(b.n));return`# 变更索引\n\n| 变更 | 状态 | 路径 |\n|------|------|------|\n${rows.map(x=>`| ${x.n} | ${x.s} | ${x.p} |`).join('\n')}\n`}
-async function data(r,d,o){const n=name(o),b=brief(r,n),q=repo(r);if(d==='commit')return{name:n,files:String(o.files||'').split(',').filter(Boolean).sort(),message:o.message||null,brief:b.data,repo:q};if(d==='issue'){const w=b.data.workflow.issuePlan||{};return{name:n,title:o.title??w.title??null,body:o.body??w.body??'',labels:String(o.labels??w.labels??'').split(',').filter(Boolean).sort(),repository:repository(b,r),brief:b.data,repo:q}}if(d==='branch')return{name:n,branch:`${b.data.type}/${n}`,baseBranch:b.data.baseBranch||'main',brief:b.data,repo:q};if(d==='sync'){const dirty=q.changedFiles.filter(x=>!x.startsWith('shadow-docs/'));if(dirty.length)throw Error('DIRTY_WORKTREE');try{git(r,['fetch','origin','--prune'])}catch{ext('GIT_FETCH_FAILED')}const up=`origin/${b.data.baseBranch||q.branch}`,to=git(r,['rev-parse',up]);try{git(r,['merge-base','--is-ancestor',q.head,to])}catch{throw Error('SYNC_NOT_FAST_FORWARD')}return{name:n,from:q.head,to,upstream:up}}
-if(d==='review')return{name:n,verifiedCommit:q.head,brief:b.data,repo:q};if(d==='publish')return{name:n,repository:repository(b,r),branch:b.data.branch||q.branch,baseBranch:b.data.baseBranch||'main',title:o.title||n,body:o.body||'',head:q.head,brief:b.data};if(d==='release'){const w=b.data.workflow.release||{};return{name:n,files:String(o.files??w.files??'').split(',').filter(Boolean).sort(),message:o.message??w.message??null,title:o.title??w.title??n,body:o.body??w.body??'',repository:repository(b,r),branch:b.data.branch||q.branch,baseBranch:b.data.baseBranch||'main',head:q.head,brief:b.data,repo:q}}if(d==='reconcile'){let review=b.data.review;if(review?.conclusion==='passed'&&review.verifiedCommit!==q.head)review={conclusion:'pending',verifiedCommit:null,verifiedAt:null};let gh=b.data.github||{};if(gh.repository&&gh.pullRequest&&!gh.pullRequestUrl){const x=await pr(b,r);gh={...gh,pullRequestUrl:x.html_url||null}}if(gh.repository&&gh.issue&&!gh.issueUrl){const x=await api(`/repos/${gh.repository}/issues/${gh.issue}`);gh={...gh,issueUrl:x.html_url||null}}const ts=tasks(b.body);return{name:n,nextStatus:ts.length&&ts.every(x=>x.done)?'implemented':b.data.status,review,github:gh,brief:b.data,repo:q}}
-if(d==='archive'){if(b.data.review?.conclusion!=='passed'||b.data.review.verifiedCommit!==q.head)throw Error('REVIEW_NOT_PASSED');const x=await pr(b,r);if(!x.merged)throw Error('PR_NOT_MERGED');return{name:n,pullRequest:x.number,head:q.head}}return{name:n,brief:b.data,repo:q}}
-async function planned(r,d,o){return plan(d,await data(r,d,o))}
-async function execute(r,d,o){confirm(o);const e=await planned(r,d,o);if(o['plan-hash']&&o['plan-hash']!==e.planHash)throw Error('PLAN_HASH_INVALID');const n=name(o),b=brief(r,n),x=e.data;if(b.data.workflow.planHash!==e.planHash)throw Object.assign(Error(b.data.workflow.planHash?'PLAN_HASH_INVALID':'PLAN_HASH_REQUIRED'),{status:b.data.workflow.planHash?1:2})
-if(d==='commit'){if(!x.message||!x.files.length)throw Error('COMMIT_INPUT_REQUIRED');if(x.files.some(f=>['.','-A','--all'].includes(f)||f.startsWith('../')||f.startsWith('/')))throw Object.assign(Error('UNSUPPORTED_OPERATION'),{status:4});git(r,['add','--',...x.files]);git(r,['commit','-m',x.message]);b.data.status='committed';b.data.workflow.checkpoint=git(r,['rev-parse','HEAD']);write(b);return{commit:b.data.workflow.checkpoint}}
-if(d==='branch'){if(x.repo.branch===x.baseBranch)git(r,['switch','-c',x.branch]);b.data.branch=x.branch;b.data.status='branched';write(b);return{branch:x.branch}}
-if(d==='sync'){try{git(r,['merge','--ff-only',x.to])}catch{ext('GIT_FAST_FORWARD_FAILED')}return{head:git(r,['rev-parse','HEAD'])}}
-if(d==='issue'){if(!x.title)throw Error('ISSUE_TITLE_REQUIRED');const z=await api(`/repos/${x.repository}/issues`,{method:'POST',body:JSON.stringify({title:x.title,body:x.body,labels:x.labels})});b.data.github.repository=x.repository;b.data.github.issue=z.number;b.data.github.issueUrl=z.html_url;b.data.workflow.checkpoint=`issue:${z.number}`;write(b);return{number:z.number,url:z.html_url}}
-if(d==='review'){const ts=tasks(b.body);if(ts.length&&!ts.every(t=>t.done))throw Error('TASKS_NOT_COMPLETE');const c=o.conclusion||'passed';if(!['passed','blocked'].includes(c))throw Error('INVALID_CONCLUSION');if(o.knowledge&&!['新增','更新','废弃','无需变更'].includes(o.knowledge))throw Error('INVALID_KNOWLEDGE');b.data.review={conclusion:c,verifiedCommit:x.verifiedCommit,verifiedAt:c==='passed'?new Date().toISOString():b.data.review?.verifiedAt||null};b.data.knowledge=o.knowledge?{action:o.knowledge,target:o.target||null,reason:o.reason||null}:null;if(c==='passed')b.data.status='reviewed';write(b);return{conclusion:c,knowledge:b.data.knowledge}}
-if(d==='publish'){try{git(r,['push','-u','origin',x.branch],{timeout:120000})}catch{ext('GIT_PUSH_FAILED')}const{pr:z,created}=await ensurePr(x);b.data.github.pullRequest=z.number;b.data.github.pullRequestUrl=z.html_url;b.data.status='published';b.data.workflow.checkpoint=`pr:${z.number}`;write(b);return{number:z.number,url:z.html_url,created}}
-if(d==='release'){let commit=null;if(!['committed','published'].includes(b.data.status)){if(!x.message||!x.files.length)throw Error('COMMIT_INPUT_REQUIRED');if(x.files.some(f=>['.','-A','--all'].includes(f)||f.startsWith('../')||f.startsWith('/')))throw Object.assign(Error('UNSUPPORTED_OPERATION'),{status:4});git(r,['add','--',...x.files]);git(r,['commit','-m',x.message]);b.data.status='committed';b.data.workflow.checkpoint=git(r,['rev-parse','HEAD'])}commit=b.data.workflow.checkpoint;try{git(r,['push','-u','origin',x.branch],{timeout:120000})}catch{ext('GIT_PUSH_FAILED')}const{pr:z,created}=await ensurePr(x);b.data.github.pullRequest=z.number;b.data.github.pullRequestUrl=z.html_url;b.data.status='published';b.data.workflow.checkpoint=`pr:${z.number}`;write(b);return{commit,number:z.number,url:z.html_url,created}}
-if(d==='reconcile'){b.data.status=x.nextStatus;b.data.review=x.review;b.data.github=x.github;write(b);return{status:x.nextStatus,review:x.review,github:x.github}}
-if(d==='archive'){b.data.status='archived';b.data.workflow.checkpoint=`merged-pr:${x.pullRequest}`;write(b);const dest=dirname(xp(r,n));mkdirSync(dirname(dest),{recursive:true});renameSync(dirname(b.path),dest);writeFileSync(join(r,'shadow-docs','INDEX.md'),index(r));return{path:xp(r,n)}}throw Object.assign(Error('UNSUPPORTED_OPERATION'),{status:4})}
-async function handle(r,p,o){const[d,a,s]=p;if(!d||d==='help')return out({ok:true,command:'help',data:HELP});if(d==='repo'&&a==='inspect')return out({ok:true,command:'repo.inspect',data:repo(r)});if(d==='pr'&&a==='inspect')return out({ok:true,command:'pr.inspect',data:await pr(brief(r,name(o)),r)});if(d==='conflict'&&a==='inspect'){const n=name(o),files=new Set(brief(r,n).data.files||[]),base=join(r,'shadow-docs','changes'),overlaps=[];for(const e of readdirSync(base,{withFileTypes:true}).filter(x=>x.isDirectory()&&x.name!==n&&x.name!=='archive'))try{const fs=(brief(r,e.name).data.files||[]).filter(x=>files.has(x)).sort();if(fs.length)overlaps.push({change:e.name,files:fs})}catch{}return out({ok:true,command:'conflict.inspect',data:{overlaps}})}
-if(d==='task'&&a==='list'){return out({ok:true,command:'task.list',data:{tasks:tasks(brief(r,name(o)).body)}})}if(d==='task'&&a==='set'){confirm(o);const b=brief(r,name(o)),n=Number(String(o.task||'').replace('task-',''));if(!Number.isInteger(n)||!['todo','done'].includes(o.state))throw Error('INVALID_TASK');let i=0;b.body=b.body.replace(/^(\s*- \[)([ xX])(\]\s+.+)$/gm,(m,x,y,z)=>{i++;return i===n?`${x}${o.state==='done'?'x':' '}${z}`:m});if(i<n)throw Error('TASK_NOT_FOUND');if(b.data.status==='draft')b.data.status='implementing';write(b);return out({ok:true,command:'task.set',data:{task:`task-${n}`,state:o.state}})}
-if(d==='change'&&a==='create'){confirm(o);const n=name(o);if(existsSync(ap(r,n)))throw Error('CHANGE_EXISTS');const b={path:ap(r,n),data:{schema:'shadow-dev/v1',name:n,type:o.type||'feat',scope:o.scope||null,status:'draft',baseBranch:o['base-branch']||'main',branch:null,files:String(o.files||'').split(',').filter(Boolean).sort(),github:{repository:o.repository||null,issue:null,issueUrl:null,pullRequest:null,pullRequestUrl:null},review:{conclusion:'pending',verifiedCommit:null,verifiedAt:null},workflow:{operation:null,checkpoint:null,planHash:null,updatedAt:null,lastError:null}},body:readBody(o,n)};write(b);return out({ok:true,command:'change.create',data:{name:n,path:b.path}})}if(d==='change'&&a==='approve'){confirm(o);const b=brief(r,name(o));b.data.status='proposed';write(b);return out({ok:true,command:'change.approve',data:{name:o.name,status:'proposed'}})}
-if(d==='index'&&a==='rebuild'&&s==='plan')return out(plan('index.rebuild',{content:index(r),current:existsSync(join(r,'shadow-docs','INDEX.md'))?readFileSync(join(r,'shadow-docs','INDEX.md'),'utf8'):''}));if(d==='index'&&a==='rebuild'&&s==='execute'){confirm(o,true);const e=plan('index.rebuild',{content:index(r),current:existsSync(join(r,'shadow-docs','INDEX.md'))?readFileSync(join(r,'shadow-docs','INDEX.md'),'utf8'):''});if(e.planHash!==o['plan-hash'])throw Error('PLAN_HASH_INVALID');writeFileSync(join(r,'shadow-docs','INDEX.md'),e.data.content);return out({ok:true,command:'index.rebuild.execute',data:{path:'shadow-docs/INDEX.md'}})}if(DOMAINS.has(d)&&a==='plan'){const e=await planned(r,d,o),b=brief(r,name(o));b.data.workflow.planHash=e.planHash;if(d==='release')b.data.workflow.release={files:e.data.files,message:e.data.message,title:e.data.title,body:e.data.body};if(d==='issue')b.data.workflow.issuePlan={title:e.data.title,body:e.data.body,labels:e.data.labels};write(b);return out(e)}if(DOMAINS.has(d)&&a==='execute'){confirm(o);return out({ok:true,command:`${d}.execute`,data:await execute(r,d,o)})}return fail('UNKNOWN_COMMAND',`unsupported command: ${p.join(' ')}`)}
-try{const{p,o}=args(process.argv.slice(2));if(p.includes('--help')||!p.length)out({ok:true,command:'help',data:HELP});else await handle(root(),p,o)}catch(e){fail(e.code||e.message,e.message,e.status||1)}
+import { args, HELP } from './lib/args.mjs'
+import { out, fail } from './lib/output.mjs'
+import { plan } from './lib/plan.mjs'
+import { root, repo } from './lib/git.mjs'
+import { brief, write, tasks } from './lib/brief.mjs'
+import { confirm, name } from './lib/input.mjs'
+import { pr } from './lib/github.mjs'
+import * as branch from './lib/domains/branch.mjs'
+import * as sync from './lib/domains/sync.mjs'
+import * as review from './lib/domains/review.mjs'
+import * as commit from './lib/domains/commit.mjs'
+import * as publish from './lib/domains/publish.mjs'
+import * as release from './lib/domains/release.mjs'
+import * as reconcile from './lib/domains/reconcile.mjs'
+import * as archive from './lib/domains/archive.mjs'
+import * as issue from './lib/domains/issue.mjs'
+import * as change from './lib/domains/change.mjs'
+import * as task from './lib/domains/task.mjs'
+import * as inspect from './lib/domains/inspect.mjs'
+import * as index from './lib/domains/index.mjs'
+
+const DOMAINS = { branch, sync, review, commit, publish, release, reconcile, archive, issue }
+
+// execute 与 plan 用同一 planData 重算并对比 hash，brief 里的 planHash 是 execute 的前置凭证
+async function executeDomain(d, r, o) {
+  confirm(o)
+  const mod = DOMAINS[d]
+  const e = plan(d, await mod.planData(r, o))
+  if (o['plan-hash'] && o['plan-hash'] !== e.planHash) throw Error('PLAN_HASH_INVALID')
+  const n = name(o), b = brief(r, n), x = e.data
+  if (b.data.workflow.planHash !== e.planHash) throw Object.assign(Error(b.data.workflow.planHash ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED'), { status: b.data.workflow.planHash ? 1 : 2 })
+  return mod.execute(r, o, x, b)
+}
+
+async function planDomain(d, r, o) {
+  const mod = DOMAINS[d]
+  const e = plan(d, await mod.planData(r, o))
+  const b = brief(r, name(o))
+  b.data.workflow.planHash = e.planHash
+  if (d === 'release') b.data.workflow.release = { files: e.data.files, message: e.data.message, title: e.data.title, body: e.data.body }
+  if (d === 'issue') b.data.workflow.issuePlan = { title: e.data.title, body: e.data.body, labels: e.data.labels }
+  write(b)
+  return e
+}
+
+async function handle(r, p, o) {
+  const [d, a, s] = p
+  if (!d || d === 'help') return out({ ok: true, command: 'help', data: HELP })
+  if (d === 'repo' && a === 'inspect') return out({ ok: true, command: 'repo.inspect', data: inspect.repoState(r) })
+  if (d === 'pr' && a === 'inspect') return out({ ok: true, command: 'pr.inspect', data: await inspect.pullRequest(r, o) })
+  if (d === 'conflict' && a === 'inspect') return out({ ok: true, command: 'conflict.inspect', data: inspect.conflict(r, o) })
+  if (d === 'task' && a === 'list') return out({ ok: true, command: 'task.list', data: task.list(r, o) })
+  if (d === 'task' && a === 'set') return out({ ok: true, command: 'task.set', data: task.set(r, o) })
+  if (d === 'change' && a === 'create') return out({ ok: true, command: 'change.create', data: change.create(r, o) })
+  if (d === 'change' && a === 'approve') return out({ ok: true, command: 'change.approve', data: change.approve(r, o) })
+  if (d === 'index' && a === 'rebuild' && s === 'plan') return out(index.rebuildPlan(r))
+  if (d === 'index' && a === 'rebuild' && s === 'execute') return out({ ok: true, command: 'index.rebuild.execute', data: index.rebuildExecute(r, o) })
+  if (Object.hasOwn(DOMAINS, d) && a === 'plan') return out(await planDomain(d, r, o))
+  if (Object.hasOwn(DOMAINS, d) && a === 'execute') return out({ ok: true, command: `${d}.execute`, data: await executeDomain(d, r, o) })
+  return fail('UNKNOWN_COMMAND', `unsupported command: ${p.join(' ')}`)
+}
+
+try {
+  const { p, o } = args(process.argv.slice(2))
+  if (p.includes('--help') || !p.length) out({ ok: true, command: 'help', data: HELP })
+  else await handle(root(), p, o)
+} catch (e) {
+  fail(e.code || e.message, e.message, e.status || 1)
+}
