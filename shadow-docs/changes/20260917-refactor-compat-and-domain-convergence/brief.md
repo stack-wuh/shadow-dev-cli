@@ -39,8 +39,8 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "798249728aafe283b89dde41e82ee7b9ba48f2d6",
-    "planHash": "87558c9262f2572ccdfdfc8e1f0353e3d2f2b56f903505e8576affdabf3d574f",
+    "checkpoint": "10158ef3266ed0f6db122f9f75b73b3251ba82ff",
+    "planHash": "4ba7c96d4827ea6037e95398a78dbc898135d008a6f08367b18ed7613171a8a5",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -94,9 +94,9 @@
 
 ### Phase 3 — 回归与文档
 
-- [ ] 新增测试：CRLF brief 读-改-写 round-trip、反斜杠 `--files` 与 conflict 交集匹配、rename 行 changedFiles 结果 —— `test/cli.test.mjs`
-- [ ] pack.mjs 清理冗余动态 import；`tar` 缺失时给出明确报错提示 —— `scripts/pack.mjs`
-- [ ] README 补命令总览、退出码表、`--json` 兼容参数说明；35 项存量测试全量回归 —— `README.md` — `test/cli.test.mjs`
+- [x] 新增测试：CRLF brief 读-改-写 round-trip、反斜杠 `--files` 与 conflict 交集匹配、rename 行 changedFiles 结果 —— `test/cli.test.mjs`
+- [x] pack.mjs 清理冗余动态 import；`tar` 缺失时给出明确报错提示 —— `scripts/pack.mjs`
+- [x] README 补命令总览、退出码表、`--json` 兼容参数说明；35 项存量测试全量回归 —— `README.md` — `test/cli.test.mjs`
 
 ## 结果
 
