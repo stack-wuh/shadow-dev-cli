@@ -4,7 +4,7 @@
   "name": "20260917-feature-install-cli-script",
   "type": "feature",
   "scope": "scripts",
-  "status": "branched",
+  "status": "published",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-install-cli-script",
   "files": [
@@ -16,18 +16,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 11,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/11",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 13,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/13"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "38b13641d0167403b99e557e3e1fe8df4d321183",
+    "verifiedAt": "2026-09-17T09:21:06.983Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:11",
-    "planHash": "248575703efb32d8cd57ac78c2ad9e831885fc87659389c1a98b984233cd7d64",
+    "checkpoint": "pr:13",
+    "planHash": "9f6178c08054b867c2105d6331097ca8fbbab78d388d8dc468d044aa437d3e8e",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -37,6 +37,11 @@
         "feature"
       ]
     }
+  },
+  "knowledge": {
+    "action": "无需变更",
+    "target": null,
+    "reason": null
   }
 }
 ---
