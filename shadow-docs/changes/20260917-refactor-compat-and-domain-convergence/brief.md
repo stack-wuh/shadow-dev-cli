@@ -4,7 +4,7 @@
   "name": "20260917-refactor-compat-and-domain-convergence",
   "type": "refactor",
   "scope": "lib",
-  "status": "branched",
+  "status": "committed",
   "baseBranch": "main",
   "branch": "refactor/20260917-refactor-compat-and-domain-convergence",
   "files": [
@@ -39,8 +39,8 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:1",
-    "planHash": "f4a230383bc3cb5fc6eac11d1f91ab32e3bfbeae1a76916687ef14d3d4adc53a",
+    "checkpoint": "798249728aafe283b89dde41e82ee7b9ba48f2d6",
+    "planHash": "87558c9262f2572ccdfdfc8e1f0353e3d2f2b56f903505e8576affdabf3d574f",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -87,10 +87,10 @@
 
 ### Phase 2 — 架构收敛
 
-- [ ] 提取共享步骤模块：`commitStep(r, x)`、`pushAndOpenPr(r, x, b)`，commit/publish/release 三域改为复用 —— `lib/steps.mjs` — `lib/domains/commit.mjs` `lib/domains/publish.mjs` `lib/domains/release.mjs`
-- [ ] plan 回写领域化：各域可选导出 `persistPlan(e, b)`，`planDomain` 改为 `mod.persistPlan?.(e, b)`，删除 `d === 'release'` / `d === 'issue'` 硬编码 —— `cli.mjs` — `lib/domains/release.mjs` `lib/domains/issue.mjs`
-- [ ] index 并入统一通道：改造为 DOMAINS 成员（planData/execute + persistPlan），hash 校验语义与 executeDomain 对齐，保持 `index rebuild plan|execute` 外部契约不变 —— `cli.mjs` — `lib/domains/index.mjs`
-- [ ] 错误构造统一：`lib/errors.mjs` 提供 `err(code, {status})`，全域错误改经它构造；错误码与退出码 1/2/3/4 语义文档化 —— `lib/errors.mjs` — `README.md`
+- [x] 提取共享步骤模块：`commitStep(r, x)`、`pushAndOpenPr(r, x, b)`，commit/publish/release 三域改为复用 —— `lib/steps.mjs` — `lib/domains/commit.mjs` `lib/domains/publish.mjs` `lib/domains/release.mjs`
+- [x] plan 回写领域化：各域可选导出 `persistPlan(e, b)`，`planDomain` 改为 `mod.persistPlan?.(e, b)`，删除 `d === 'release'` / `d === 'issue'` 硬编码 —— `cli.mjs` — `lib/domains/release.mjs` `lib/domains/issue.mjs`
+- [x] index 并入统一通道：改造为 DOMAINS 成员（planData/execute + persistPlan），hash 校验语义与 executeDomain 对齐，保持 `index rebuild plan|execute` 外部契约不变 —— `cli.mjs` — `lib/domains/index.mjs`
+- [x] 错误构造统一：`lib/errors.mjs` 提供 `err(code, {status})`，全域错误改经它构造；错误码与退出码 1/2/3/4 语义文档化 —— `lib/errors.mjs` — `README.md`
 
 ### Phase 3 — 回归与文档
 
