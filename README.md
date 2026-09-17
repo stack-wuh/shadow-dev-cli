@@ -24,7 +24,16 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 | `archive plan\|execute` | 归档已合并变更并重建 INDEX |
 | `index rebuild plan\|execute` | 重建变更索引 |
 
-所有输出为单行 JSON：成功 `{"ok":true,"command":...,"data":...}`，失败 `{"ok":false,"error":{"code","message"}}`。`--json` 参数为历史兼容保留，接受即无操作（输出恒为 JSON）。
+所有输出为单行 JSON：成功 `{"ok":true,"command":...,"data":...}`，失败 `{"ok":false,"error":{"code","message"}}`。`--json` 参数为历史兼容保留，接受即无操作（输出恒为 JSON）。带流程后继的命令，成功结果的 `data.nextStep` 给出下一步建议命令（稳定英文模板，不随语言变化，agent 可直接消费）。
+
+## 人用输出层（stderr）
+
+stdout 的 JSON 契约之外，CLI 在 stderr 渲染一层人类提示：进场横幅（命令+参数）、收场摘要（结果+耗时）、`nextStep` 引导、错误码的本地化解释与示例命令。stderr 内容不承载契约，可随时关闭。
+
+- 语言解析：`--lang zh|en` > `SHADOW_DEV_LANG` > 系统 locale 自动探测 > 默认 `zh`。非法取值报 `INVALID_LANG`（退出码 2）。
+- 关闭提示：`SHADOW_DEV_QUIET=1`（或 `true`）时 stderr 零输出，适合日志管道。
+- 语言只影响 stderr 文案；错误 code、JSON 结构、`nextStep` 模板均不本地化。
+- `shadow-dev help` 输出全部命令的结构化目录（`data.help` 保留原字符串 + `data.commands` 明细）；`shadow-dev help <命令>` 查看单命令的参数、必填项与示例。
 
 ## 平台兼容
 
@@ -45,6 +54,8 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 - `GITHUB_TOKEN` / `GH_TOKEN`：GitHub API 必需（issue/publish/release/archive）。
 - `SHADOW_GITHUB_API_URL`：覆盖 API base URL（测试/代理），默认 `https://api.github.com`。
 - `SHADOW_API_TIMEOUT_MS`：API 超时，默认 15000。
+- `SHADOW_DEV_LANG`：`zh|en`，stderr 人用层语言（被 `--lang` 覆盖）。
+- `SHADOW_DEV_QUIET`：非空且非 `0` 时关闭 stderr 人用层。
 
 ## 安装与分发
 
@@ -53,7 +64,7 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 ## 开发
 
 ```bash
-npm test   # node --test，38 个契约测试覆盖全部命令域
+npm test   # node --test，45 个契约测试覆盖全部命令域与 stderr 人用层
 ```
 
 行为契约：命令、JSON 输出结构、错误码、planHash 机制保持稳定；`test/cli.test.mjs` 是唯一契约规格。

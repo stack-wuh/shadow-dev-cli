@@ -4,9 +4,9 @@
   "name": "20260917-feature-human-cli-ux",
   "type": "feature",
   "scope": "cli.mjs,lib",
-  "status": "proposed",
+  "status": "reviewed",
   "baseBranch": "main",
-  "branch": null,
+  "branch": "feature/20260917-feature-human-cli-ux",
   "files": [
     "README.md",
     "cli.mjs",
@@ -26,14 +26,14 @@
     "pullRequestUrl": null
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "f05550891f580cfe3b51488feb98b822987ef734",
+    "verifiedAt": "2026-09-17T03:38:05.285Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:2",
-    "planHash": "8d398b8b084c221c2d9d6c858a7e13a2daf4130dbef0f6ff6161c34ce2f31770",
+    "checkpoint": "f05550891f580cfe3b51488feb98b822987ef734",
+    "planHash": "6c934f68c66e6f8801dfb50b52404697e6a5c83eb5927e6a934b5047ae6a19ad",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -43,6 +43,11 @@
         "feature"
       ]
     }
+  },
+  "knowledge": {
+    "action": "新增",
+    "target": "shadow-docs/knowledge/cli-output-contract.md",
+    "reason": "stdout 纯 JSON / 人用输出走 stderr / code 不本地化——输出面根契约，所有触碰输出面的变更必须遵守"
   }
 }
 ---
@@ -72,25 +77,25 @@ CLI 当前是纯机器契约界面：无进出场反馈（44 秒的 release 全�
 
 ### Phase 1 — 事实源与语言基础（依赖 refactor Phase 2 完成）
 
-- [ ] 命令目录 `lib/commands.mjs`：13 个命令组的 usage/参数(名称/必填/说明)/示例/nextStep 结构化定义，HELP 字符串由目录派生 —— `lib/commands.mjs` `lib/args.mjs`
-- [ ] i18n 词典 `lib/i18n.mjs`：zh/en 消息集 + 语言解析链（--lang > SHADOW_DEV_LANG > locale > zh），非法 --lang 报 usage 提示 —— `lib/i18n.mjs` `lib/args.mjs`
+- [x] 命令目录 `lib/commands.mjs`：13 个命令组的 usage/参数(名称/必填/说明)/示例/nextStep 结构化定义，HELP 字符串由目录派生 —— `lib/commands.mjs` `lib/args.mjs`
+- [x] i18n 词典 `lib/i18n.mjs`：zh/en 消息集 + 语言解析链（--lang > SHADOW_DEV_LANG > locale > zh），非法 --lang 报 usage 提示 —— `lib/i18n.mjs` `lib/args.mjs`
 
 ### Phase 2 — 人用层渲染与接线
 
-- [ ] `lib/human.mjs`：stderr 渲染器——进场横幅（命令+关键参数）、收场（✅ 结果摘要+耗时）、错误（code 本地化解释+该命令 usage 示例，参数表从命令目录派生）、`SHADOW_DEV_QUIET` 抑制 —— `lib/human.mjs`
-- [ ] `cli.mjs` 接线：handle 出口统一挂进出场/错误渲染；成功结果按目录追加 `data.nextStep`（含参数化建议，如 approve 后提示 `branch plan --name <n>`） —— `cli.mjs` `lib/output.mjs`
-- [ ] help 升级：`help` 返回保留旧字符串字段并新增结构化 commands；`help <command>` 单命令详情（stdout JSON、stderr 人读版） —— `cli.mjs` `lib/commands.mjs`
-- [ ] 漏参提示：全部验证错误（NAME_REQUIRED/CONFIRMATION_REQUIRED/PLAN_HASH_*/BRIEF_NOT_FOUND 等）的人用输出附带期望参数与示例 —— `lib/input.mjs` `lib/human.mjs`
+- [x] `lib/human.mjs`：stderr 渲染器——进场横幅（命令+关键参数）、收场（✅ 结果摘要+耗时）、错误（code 本地化解释+该命令 usage 示例，参数表从命令目录派生）、`SHADOW_DEV_QUIET` 抑制 —— `lib/human.mjs`
+- [x] `cli.mjs` 接线：handle 出口统一挂进出场/错误渲染；成功结果按目录追加 `data.nextStep`（含参数化建议，如 approve 后提示 `branch plan --name <n>`） —— `cli.mjs` `lib/output.mjs`
+- [x] help 升级：`help` 返回保留旧字符串字段并新增结构化 commands；`help <command>` 单命令详情（stdout JSON、stderr 人读版） —— `cli.mjs` `lib/commands.mjs`
+- [x] 漏参提示：全部验证错误（NAME_REQUIRED/CONFIRMATION_REQUIRED/PLAN_HASH_*/BRIEF_NOT_FOUND 等）的人用输出附带期望参数与示例 —— `lib/input.mjs` `lib/human.mjs`
 
 ### Phase 3 — 回归与文档
 
-- [ ] 契约测试：同命令在 `--lang zh`/`--lang en`/无 lang 下 stdout JSON 逐字节一致（nextStep 为稳定 key 非译文）；stderr 含对应语言提示；`SHADOW_DEV_QUIET=1` 时 stderr 无输出；help 子命令断言 —— `test/cli.test.mjs`
-- [ ] README：语言切换配置、stderr 人用层与 nextStep 说明、help 示例（与 refactor 变更的退出码表合流成稿） —— `README.md`
+- [x] 契约测试：同命令在 `--lang zh`/`--lang en`/无 lang 下 stdout JSON 逐字节一致（nextStep 为稳定 key 非译文）；stderr 含对应语言提示；`SHADOW_DEV_QUIET=1` 时 stderr 无输出；help 子命令断言 —— `test/cli.test.mjs`
+- [x] README：语言切换配置、stderr 人用层与 nextStep 说明、help 示例（与 refactor 变更的退出码表合流成稿） —— `README.md`
 
 ## 结果
 
-- 实际耗时: —
-- 验证: —
+- 实际耗时: 约 35 分钟
+- 验证: `node --test` 45/45 通过（38 存量契约 + 7 新增人用层契约：语言无关 stdout 逐字节断言、stderr 提示、nextStep 稳定 key、结构化 help、QUIET 抑制、INVALID_LANG）；全模块 `node --check` 通过；期间发现并修复消息富化误伤 CONFIRMATION_REQUIRED/PLAN_HASH_REQUIRED 退出码 2 的回归（新契约测试当场捕获）。
 
 ## 知识评估
 

@@ -187,6 +187,64 @@ test('file lists normalize Windows backslash separators', () => {
   assert.deepEqual(JSON.parse(conflict.stdout).data.overlaps, [{ change: 'backslash', files: ['src/example.js'] }])
 })
 
+test('human layer: banners and hints on stderr, stdout contract language-invariant', () => {
+  const root = fixture()
+  const zh = run(['task', 'list', '--name', 'sample', '--lang', 'zh'], root)
+  const en = run(['task', 'list', '--name', 'sample', '--lang', 'en'], root)
+  assert.equal(zh.status, 0, zh.stderr)
+  assert.equal(zh.stdout, en.stdout, 'stdout JSON must be byte-identical across languages')
+  assert.match(zh.stderr, /进场|完成/)
+  assert.match(en.stderr, /enter|done/i)
+})
+
+test('validation errors carry localized usage hints on stderr', () => {
+  const result = run(['task', 'set', '--state', 'done', '--confirm'], fixture())
+  assert.equal(result.status, 1)
+  assert.equal(JSON.parse(result.stdout).error.code, 'NAME_REQUIRED')
+  assert.match(result.stderr, /--name/)
+})
+
+test('mutating results carry a stable untranslated nextStep in JSON', () => {
+  const root = fixture()
+  const zh = run(['change', 'approve', '--name', 'sample', '--confirm', '--lang', 'zh'], root)
+  const en = run(['change', 'approve', '--name', 'sample', '--confirm', '--lang', 'en'], root)
+  assert.equal(zh.status, 0, zh.stderr)
+  assert.equal(JSON.parse(zh.stdout).data.nextStep, 'branch plan --name sample')
+  assert.equal(JSON.parse(zh.stdout).data.nextStep, JSON.parse(en.stdout).data.nextStep)
+  assert.match(en.stderr, /next/i)
+})
+
+test('help is structured: legacy string kept, per-command detail, language-invariant stdout', () => {
+  const overview = run(['help', '--lang', 'zh'])
+  const data = JSON.parse(overview.stdout).data
+  assert.match(data.help, /repo inspect/)
+  assert.equal(data.commands['branch.execute'].usage, 'branch execute')
+  assert.deepEqual(Object.keys(data.commands['change.create'].summary).sort(), ['en', 'zh'])
+  const detail = run(['help', 'branch'])
+  assert.equal(JSON.parse(detail.stdout).command, 'help.branch')
+  assert.equal(overview.stdout, run(['help', '--lang', 'en']).stdout)
+})
+
+test('SHADOW_DEV_QUIET silences the human channel', () => {
+  const result = run(['repo', 'inspect', '--lang', 'en'], fixture(), { SHADOW_DEV_QUIET: '1' })
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(result.stderr, '')
+})
+
+test('unknown commands keep stable code with localized stderr', () => {
+  const zh = run(['bogus', '--lang', 'zh'], fixture())
+  const en = run(['bogus', '--lang', 'en'], fixture())
+  assert.equal(JSON.parse(zh.stdout).error.code, 'UNKNOWN_COMMAND')
+  assert.equal(zh.stdout, en.stdout)
+  assert.match(zh.stderr, /help/)
+})
+
+test('invalid --lang is rejected with a usage hint', () => {
+  const result = run(['help', '--lang', 'fr'])
+  assert.equal(result.status, 2)
+  assert.equal(JSON.parse(result.stdout).error.code, 'INVALID_LANG')
+})
+
 test('changed files resolve renamed porcelain entries to the new path', () => {
   const root = fixture()
   execFileSync('git', ['mv', 'README.md', 'DOCS.md'], { cwd: root })
