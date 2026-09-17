@@ -39,8 +39,8 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "f5a3dd43649666b2be2b49a7c04b0e9b2e051575",
-    "planHash": "836e507cb403fad1148cd06e184e2e14c0bdc1ad1298a2f1d901c76bb8a2a3e2",
+    "checkpoint": "0c221d14e6a69262f6de78e58a5c4b187bd463c2",
+    "planHash": "0537bf0c92920057c535f2985483ffdf66483996d4207803b1dc4d7ec04e84bf",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -100,8 +100,8 @@
 
 ## 结果
 
-- 实际耗时: —
-- 验证: —
+- 实际耗时: 约 50 分钟
+- 验证: `node --test` 38/38 通过（35 存量 + 3 新增兼容契约）；全部模块 `node --check` 通过；`scripts/pack.mjs` 实测产出 tar 并验证内容清单（顺带发现并修复 Git Bash 下 `D:\` 被 tar 误判为远程主机路径的真实缺陷）；review 阶段修复 executeDomain 三元可读性问题后全量回归保持绿色。
 
 ## 知识评估
 

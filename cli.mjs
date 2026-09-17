@@ -33,7 +33,10 @@ async function executeDomain(c, mod, r, o) {
     return mod.execute(r, o, e.data)
   }
   const b = brief(r, name(o))
-  if (b.data.workflow.planHash !== e.planHash) throw err(b.data.workflow.planHash ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED', b.data.workflow.planHash ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED', b.data.workflow.planHash ? 1 : 2)
+  if (b.data.workflow.planHash !== e.planHash) {
+    const code = b.data.workflow.planHash ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED'
+    throw err(code, code, b.data.workflow.planHash ? 1 : 2)
+  }
   return mod.execute(r, o, e.data, b)
 }
 
