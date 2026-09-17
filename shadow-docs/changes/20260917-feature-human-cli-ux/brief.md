@@ -4,7 +4,7 @@
   "name": "20260917-feature-human-cli-ux",
   "type": "feature",
   "scope": "cli.mjs,lib",
-  "status": "branched",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-human-cli-ux",
   "files": [
@@ -26,14 +26,14 @@
     "pullRequestUrl": null
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "f05550891f580cfe3b51488feb98b822987ef734",
+    "verifiedAt": "2026-09-17T03:38:05.285Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:2",
-    "planHash": "b250a3afca93dcad9c17e89b1aaaabd87f752dffa441a95a5cd9e3f4dd47c519",
+    "checkpoint": "f05550891f580cfe3b51488feb98b822987ef734",
+    "planHash": "6c934f68c66e6f8801dfb50b52404697e6a5c83eb5927e6a934b5047ae6a19ad",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -43,6 +43,11 @@
         "feature"
       ]
     }
+  },
+  "knowledge": {
+    "action": "新增",
+    "target": "shadow-docs/knowledge/cli-output-contract.md",
+    "reason": "stdout 纯 JSON / 人用输出走 stderr / code 不本地化——输出面根契约，所有触碰输出面的变更必须遵守"
   }
 }
 ---

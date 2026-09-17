@@ -7,3 +7,4 @@
 | 技术域 | 关键词 | 应查阅 |
 |--------|--------|--------|
 | brief 读写 | brief frontmatter 行尾 CRLF autocrlf BRIEF_FRONTMATTER_REQUIRED planHash | knowledge/brief-frontmatter-crlf.md |
+| CLI 输出面 | stdout stderr JSON 契约 语言 i18n 本地化 nextStep help 提示 QUIET | knowledge/cli-output-contract.md |
