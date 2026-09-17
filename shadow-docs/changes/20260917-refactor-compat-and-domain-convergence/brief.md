@@ -4,7 +4,7 @@
   "name": "20260917-refactor-compat-and-domain-convergence",
   "type": "refactor",
   "scope": "lib",
-  "status": "committed",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "refactor/20260917-refactor-compat-and-domain-convergence",
   "files": [
@@ -33,14 +33,14 @@
     "pullRequestUrl": null
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "e23e0a82417b84c9a52a32a22ded61cb60a03b89",
+    "verifiedAt": "2026-09-17T02:42:43.835Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "0c221d14e6a69262f6de78e58a5c4b187bd463c2",
-    "planHash": "0537bf0c92920057c535f2985483ffdf66483996d4207803b1dc4d7ec04e84bf",
+    "checkpoint": "e23e0a82417b84c9a52a32a22ded61cb60a03b89",
+    "planHash": "22852f65a368780a83ff718ed7aec1cc1bb48c867f384918841ad3559f05e854",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -50,6 +50,11 @@
         "refactor"
       ]
     }
+  },
+  "knowledge": {
+    "action": "新增",
+    "target": "shadow-docs/knowledge/brief-frontmatter-crlf.md",
+    "reason": "CRLF 容忍读取/LF 统一写回是实证出的 brief 文件格式契约，触碰 brief 读写的所有变更必须遵守"
   }
 }
 ---
