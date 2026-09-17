@@ -102,8 +102,8 @@
 
 ## 结果
 
-- 实际耗时: —
-- 验证: —
+- 实际耗时: 约 40 分钟（含 propose 对齐与并发会话串扰排查）
+- 验证: `node --test test/cli.test.mjs` exit 0（含 2 个新增 TDD 用例：`missing required args render from the command catalog on stderr`——先红后绿，stdout 机器消息逐字节冻结 + 中英语言不变性；`change list enumerates active briefs and skips archive and unreadable dirs`）；管道/TTY/QUIET/中英手工复验：缺 `--name` 时 stderr 出现 `--name * 变更名（shadow-docs/changes/ 下的子目录，如 20260917-feature-x）` 参数行与 `<change-name>` 示例。计划外发现：另一并行会话与本流程共用同一工作目录导致 commit 误落本地 main、PR 创建 422（远端 fix 分支停在旧 sha、diff 为空），经 `git branch -f` 归位后 FF push 成功；多会话并行应使用独立 `git worktree`。
 
 ## 知识评估
 
