@@ -176,6 +176,39 @@ test('task list exposes stable task identifiers', () => {
   assert.deepEqual(JSON.parse(result.stdout).data.tasks, [{ id: 'task-1', done: false, text: 'task-1 — `src/example.js` — implement' }])
 })
 
+test('file lists normalize Windows backslash separators', () => {
+  const root = fixture()
+  const created = run(['change', 'create', '--name', 'backslash', '--type', 'fix', '--files', 'lib\\a.js,src\\example.js', '--confirm', '--json'], root)
+  assert.equal(created.status, 0, created.stderr)
+  const text = readFileSync(join(root, 'shadow-docs', 'changes', 'backslash', 'brief.md'), 'utf8')
+  assert.match(text, /"lib\/a.js",\s*"src\/example.js"/)
+  const conflict = run(['conflict', 'inspect', '--name', 'sample', '--json'], root)
+  assert.equal(conflict.status, 0, conflict.stderr)
+  assert.deepEqual(JSON.parse(conflict.stdout).data.overlaps, [{ change: 'backslash', files: ['src/example.js'] }])
+})
+
+test('changed files resolve renamed porcelain entries to the new path', () => {
+  const root = fixture()
+  execFileSync('git', ['mv', 'README.md', 'DOCS.md'], { cwd: root })
+  const result = run(['repo', 'inspect', '--json'], root)
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout).data.changedFiles, ['DOCS.md', 'shadow-docs/'])
+})
+
+test('brief parsing tolerates CRLF and writes back LF', () => {
+  const root = fixture()
+  const path = join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')
+  writeFileSync(path, readFileSync(path, 'utf8').replaceAll('\n', '\r\n'))
+  const listed = run(['task', 'list', '--name', 'sample', '--json'], root)
+  assert.equal(listed.status, 0, listed.stderr)
+  assert.deepEqual(JSON.parse(listed.stdout).data.tasks, [{ id: 'task-1', done: false, text: 'task-1 — `src/example.js` — implement' }])
+  const set = run(['task', 'set', '--name', 'sample', '--task', 'task-1', '--state', 'done', '--confirm', '--json'], root)
+  assert.equal(set.status, 0, set.stderr)
+  const raw = readFileSync(path, 'utf8')
+  assert.ok(!raw.includes('\r'), 'rewritten brief is LF-normalized')
+  assert.match(raw, /- \[x\] task-1/)
+})
+
 test('mutating execute commands require confirmation', () => {
   const root = fixture()
   for (const args of [['branch'], ['sync'], ['review'], ['commit'], ['publish'], ['release'], ['reconcile'], ['archive']]) {

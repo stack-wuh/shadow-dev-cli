@@ -24,7 +24,13 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 | `archive plan\|execute` | 归档已合并变更并重建 INDEX |
 | `index rebuild plan\|execute` | 重建变更索引 |
 
-所有输出为单行 JSON：成功 `{"ok":true,"command":...,"data":...}`，失败 `{"ok":false,"error":{"code","message"}}`。
+所有输出为单行 JSON：成功 `{"ok":true,"command":...,"data":...}`，失败 `{"ok":false,"error":{"code","message"}}`。`--json` 参数为历史兼容保留，接受即无操作（输出恒为 JSON）。
+
+## 平台兼容
+
+- `--files` 路径参数接受 Windows 反斜杠写法（如 `lib\a.mjs`），自动归一为正斜杠并与 git 状态、conflict 比对对齐。
+- `brief.md` 解析容忍 LF/CRLF（兼容 Windows `core.autocrlf` 检出与手工编辑），CLI 写回一律统一为 LF。
+- git fetch/push 带 120 秒超时，避免凭据弹窗导致的永久挂起；GitHub API 超时见下方环境变量。
 
 ## 退出码
 
@@ -47,7 +53,7 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 ## 开发
 
 ```bash
-npm test   # node --test，35 个契约测试覆盖全部命令域
+npm test   # node --test，38 个契约测试覆盖全部命令域
 ```
 
 行为契约：命令、JSON 输出结构、错误码、planHash 机制保持稳定；`test/cli.test.mjs` 是唯一契约规格。
