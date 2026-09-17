@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-import { args, HELP } from './lib/args.mjs'
+import { args } from './lib/args.mjs'
 import { out, fail } from './lib/output.mjs'
 import { plan } from './lib/plan.mjs'
 import { root } from './lib/git.mjs'
 import { brief, write } from './lib/brief.mjs'
 import { confirm, name } from './lib/input.mjs'
 import { err } from './lib/errors.mjs'
+import { resolveLang } from './lib/i18n.mjs'
+import { HELP, COMMANDS } from './lib/commands.mjs'
+import * as human from './lib/human.mjs'
 import * as branch from './lib/domains/branch.mjs'
 import * as sync from './lib/domains/sync.mjs'
 import * as review from './lib/domains/review.mjs'
@@ -34,8 +37,8 @@ async function executeDomain(c, mod, r, o) {
   }
   const b = brief(r, name(o))
   if (b.data.workflow.planHash !== e.planHash) {
-    const code = b.data.workflow.planHash ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED'
-    throw err(code, code, b.data.workflow.planHash ? 1 : 2)
+    const stale = !!b.data.workflow.planHash
+    throw err(stale ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED', stale ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED', stale ? 1 : 2)
   }
   return mod.execute(r, o, e.data, b)
 }
@@ -50,28 +53,50 @@ async function planDomain(c, mod, r, o) {
   return e
 }
 
-async function handle(r, p, o) {
-  const [d, a, s] = p
-  if (!d || d === 'help') return out({ ok: true, command: 'help', data: HELP })
-  if (d === 'repo' && a === 'inspect') return out({ ok: true, command: 'repo.inspect', data: inspect.repoState(r) })
-  if (d === 'pr' && a === 'inspect') return out({ ok: true, command: 'pr.inspect', data: await inspect.pullRequest(r, o) })
-  if (d === 'conflict' && a === 'inspect') return out({ ok: true, command: 'conflict.inspect', data: inspect.conflict(r, o) })
-  if (d === 'task' && a === 'list') return out({ ok: true, command: 'task.list', data: task.list(r, o) })
-  if (d === 'task' && a === 'set') return out({ ok: true, command: 'task.set', data: task.set(r, o) })
-  if (d === 'change' && a === 'create') return out({ ok: true, command: 'change.create', data: change.create(r, o) })
-  if (d === 'change' && a === 'approve') return out({ ok: true, command: 'change.approve', data: change.approve(r, o) })
-  if (Object.hasOwn(DOMAINS, d)) {
-    const verb = a === 'rebuild' ? s : a, c = a === 'rebuild' ? `${d}.rebuild` : d
-    if (verb === 'plan') return out(await planDomain(c, DOMAINS[d], r, o))
-    if (verb === 'execute') return out({ ok: true, command: `${c}.execute`, data: await executeDomain(c, DOMAINS[d], r, o) })
-  }
-  return fail('UNKNOWN_COMMAND', `unsupported command: ${p.join(' ')}`)
+function helpEnvelope(p) {
+  const g = p[1]
+  if (!g) return { ok: true, command: 'help', data: { help: HELP, commands: COMMANDS } }
+  const commands = Object.fromEntries(Object.entries(COMMANDS).filter(([k]) => k === g || k.startsWith(g + '.')))
+  if (!Object.keys(commands).length) throw err('UNKNOWN_COMMAND', `unsupported command: help ${g}`)
+  return { ok: true, command: `help.${g}`, data: { help: Object.values(commands).map(e => e.usage).join('\n'), commands } }
 }
 
+async function handle(r, p, o) {
+  const [d, a, s] = p
+  if (d === 'repo' && a === 'inspect') return { ok: true, command: 'repo.inspect', data: inspect.repoState(r) }
+  if (d === 'pr' && a === 'inspect') return { ok: true, command: 'pr.inspect', data: await inspect.pullRequest(r, o) }
+  if (d === 'conflict' && a === 'inspect') return { ok: true, command: 'conflict.inspect', data: inspect.conflict(r, o) }
+  if (d === 'task' && a === 'list') return { ok: true, command: 'task.list', data: task.list(r, o) }
+  if (d === 'task' && a === 'set') return { ok: true, command: 'task.set', data: task.set(r, o) }
+  if (d === 'change' && a === 'create') return { ok: true, command: 'change.create', data: change.create(r, o) }
+  if (d === 'change' && a === 'approve') return { ok: true, command: 'change.approve', data: change.approve(r, o) }
+  if (Object.hasOwn(DOMAINS, d)) {
+    const verb = a === 'rebuild' ? s : a, c = a === 'rebuild' ? `${d}.rebuild` : d
+    if (verb === 'plan') return await planDomain(c, DOMAINS[d], r, o)
+    if (verb === 'execute') return { ok: true, command: `${c}.execute`, data: await executeDomain(c, DOMAINS[d], r, o) }
+  }
+  throw err('UNKNOWN_COMMAND', `unsupported command: ${p.join(' ')}`)
+}
+
+// stdout 恒为单行 JSON 契约；进出场横幅、错误解释、help 人读版只写 stderr（见 lib/human.mjs）
+let p = [], o = {}, L = 'zh'
 try {
-  const { p, o } = args(process.argv.slice(2))
-  if (p.includes('--help') || !p.length) out({ ok: true, command: 'help', data: HELP })
-  else await handle(root(), p, o)
+  const parsed = args(process.argv.slice(2))
+  p = parsed.p; o = parsed.o
+  L = resolveLang(o)
+  const helpMode = !p.length || p.includes('--help') || p[0] === 'help'
+  const t0 = Date.now()
+  let v
+  if (helpMode) {
+    v = helpEnvelope(p)
+    human.printHelp(L, v)
+  } else {
+    human.enter(L, p)
+    v = human.decorate(await handle(root(), p, o), o)
+    human.done(L, v, Date.now() - t0)
+  }
+  out(v)
 } catch (e) {
+  human.error(L, e, p)
   fail(e.code || e.message, e.message, e.status || 1)
 }
