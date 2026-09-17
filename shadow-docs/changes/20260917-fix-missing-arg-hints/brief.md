@@ -31,7 +31,7 @@
   "workflow": {
     "operation": null,
     "checkpoint": "issue:12",
-    "planHash": "19859a25948fbde3220e5570c85ae7192411321106a65cfbe5cdca87f2401f16",
+    "planHash": "8dd3e7cf972e43df8efc9ff4504599503e3e2c6e9609556b73a6d4e800b8f5f6",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -84,16 +84,16 @@
 
 ### Phase 1 — 缺参提示从命令目录派生
 
-- [ ] task-1 — `test/cli.test.mjs` — 先写失败测试：zh 下 `task list` 缺 `--name` 时 stderr 含「变更名」「shadow-docs/changes/」「20260917-feature-x」与 `--name *` 目录行；stdout JSON 的 code/message/exit 逐字节不变
-- [ ] task-2 — `lib/human.mjs`、`cli.mjs` — `error()` 增收已解析 options；`*_REQUIRED` 类错误按 flag→option key 映射渲染缺失必填参数行，不再单独 echo 重复 hint
-- [ ] task-3 — `lib/commands.mjs`、`lib/i18n.mjs` — `N` 描述补「变更名 = shadow-docs/changes/ 子目录，如 20260917-feature-x」（zh/en）；24 处 example `<n>` → `<change-name>`；`HINTS` 缺参条目收敛为兜底短句
-- [ ] task-4 — `test/cli.test.mjs`、README.md — 全量 `node --test` 绿；语言不变性与 QUIET 用例保持；管道/TTY 手工复验（`task list`、`task set` 缺 `--task`）
+- [x] task-1 — `test/cli.test.mjs` — 先写失败测试：zh 下 `task list` 缺 `--name` 时 stderr 含「变更名」「shadow-docs/changes/」「20260917-feature-x」与 `--name *` 目录行；stdout JSON 的 code/message/exit 逐字节不变
+- [x] task-2 — `lib/human.mjs`、`cli.mjs` — `error()` 增收已解析 options；`*_REQUIRED` 类错误按 flag→option key 映射渲染缺失必填参数行，不再单独 echo 重复 hint
+- [x] task-3 — `lib/commands.mjs`、`lib/i18n.mjs` — `N` 描述补「变更名 = shadow-docs/changes/ 子目录，如 20260917-feature-x」（zh/en）；24 处 example `<n>` → `<change-name>`；`HINTS` 缺参条目收敛为兜底短句
+- [x] task-4 — `test/cli.test.mjs`、README.md — 全量 `node --test` 绿；语言不变性与 QUIET 用例保持；管道/TTY 手工复验（`task list`、`task set` 缺 `--task`）
 
 ### Phase 2 — change list 发现命令
 
-- [ ] task-5 — `test/cli.test.mjs`、`lib/domains/change.mjs` — 先钉契约：`change list` 输出 `{ok,command:'change.list',data:{changes:[{name,type,status,branch}]}}`，含 archive 外全部活动变更
-- [ ] task-6 — `lib/commands.mjs`、`cli.mjs` — 目录注册 `change.list`（usage/summary/args/example）并接 dispatch；`shadow-dev help` 概览同步出现
-- [ ] task-7 — README.md — 命令表补 `change list`
+- [x] task-5 — `test/cli.test.mjs`、`lib/domains/change.mjs` — 先钉契约：`change list` 输出 `{ok,command:'change.list',data:{changes:[{name,type,status,branch}]}}`，含 archive 外全部活动变更
+- [x] task-6 — `lib/commands.mjs`、`cli.mjs` — 目录注册 `change.list`（usage/summary/args/example）并接 dispatch；`shadow-dev help` 概览同步出现
+- [x] task-7 — README.md — 命令表补 `change list`
 
 ## 结果
 

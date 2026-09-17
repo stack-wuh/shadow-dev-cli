@@ -4,7 +4,7 @@
   "name": "20260917-fix-installer-url-taint",
   "type": "fix",
   "scope": "scripts",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20260917-fix-installer-url-taint",
   "files": [
@@ -14,18 +14,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 14,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/14",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 15,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/15"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "07ee09d311cf428bd0bff535b71c46347c74d0ec",
-    "verifiedAt": "2026-09-17T09:38:17.072Z"
+    "verifiedCommit": "7056102050ceb2467d72e1589e0788c56912a2e9",
+    "verifiedAt": "2026-09-17T09:40:08.878Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "07ee09d311cf428bd0bff535b71c46347c74d0ec",
-    "planHash": "4932f37ed4a23e22f402c632d254a3907f58e17e7474645733752772e06fac20",
+    "checkpoint": "merged-pr:15",
+    "planHash": "b7085cc44638f182ce66de3268692abf46ea9217e60360d261d7a36ae0e451b2",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
