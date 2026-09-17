@@ -4,7 +4,7 @@
   "name": "20260917-feature-human-cli-ux",
   "type": "feature",
   "scope": "cli.mjs,lib",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-human-cli-ux",
   "files": [
@@ -22,18 +22,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 2,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/2",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 4,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/4"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "f05550891f580cfe3b51488feb98b822987ef734",
-    "verifiedAt": "2026-09-17T03:38:05.285Z"
+    "verifiedCommit": "5e54655e8cf03091f1824251fe3680d7f41fe14c",
+    "verifiedAt": "2026-09-17T06:44:44.879Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "f05550891f580cfe3b51488feb98b822987ef734",
-    "planHash": "6c934f68c66e6f8801dfb50b52404697e6a5c83eb5927e6a934b5047ae6a19ad",
+    "checkpoint": "merged-pr:4",
+    "planHash": "420b4eee3585a4acc7d3585e303f45cd41b533fd4f7b81a5d0d95c65aefa1583",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
