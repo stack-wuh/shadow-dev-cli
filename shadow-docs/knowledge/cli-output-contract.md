@@ -7,6 +7,7 @@ status: active
 source:
   - changes/20260917-feature-human-cli-ux/brief.md
   - changes/20260917-feature-help-compact-noise/brief.md
+  - changes/20260917-feature-tty-human-default/brief.md
 verified: 2026-09-17
 ---
 
@@ -14,11 +15,12 @@ verified: 2026-09-17
 
 ## 当前结论
 
-本 CLI 有且只有一个机器契约面：**stdout 恒为单行 JSON**（`{ok, command, ...}` / `{ok:false, error:{code,message}}`），与运行环境、语言设置、是否 TTY 完全无关。人类可读内容（进出场横幅、耗时、错误解释、help 人读版）只允许走 **stderr**，由 `lib/human.mjs` 渲染，可经 `SHADOW_DEV_QUIET` 整体关闭。命令目录 `lib/commands.mjs` 是两个通道的单一事实源：HELP 字符串、`help` JSON、`data.nextStep`、错误示例全部由它派生。
+本 CLI 的机器契约面是 **stdout 的单行 JSON**（`{ok, command, ...}` / `{ok:false, error:{code,message}}`），其**出现按环境路由**：非 TTY（管道/重定向）恒输出；交互 TTY 默认抑制，仅 `--json` 或 `SHADOW_DEV_JSON=1` 显式开启（判定纯函数 `output.jsonEnabled`）。JSON 的内容本身与语言、是否 TTY 无关。人类可读内容（进出场横幅、耗时、错误解释、help 人读版、TTY 下作为兜底的 `planHash` 行）只允许走 **stderr**，由 `lib/human.mjs` 渲染，可经 `SHADOW_DEV_QUIET` 整体关闭。退出码不受 JSON 抑制影响。命令目录 `lib/commands.mjs` 是两个通道的单一事实源：HELP 字符串、`help` JSON、`data.nextStep`、错误示例全部由它派生。
 
 ## 执行约束
 
 - 任何新增输出必须二选一：进 stdout JSON 契约（视为公开 API，需测试钉住），或进 stderr 人用层；**禁止**向 stdout 写非 JSON 内容。
+- 抑制 stdout 的分支必须仍然设置退出码；plan 的人用收场行必须透出 `planHash`（PTY 环境下的 agent 兜底）。`--json` 是跨环境逃生门，不得复用为其他语义。
 - 错误 code 与 `data.nextStep` 模板永不本地化；语言链固定为 `--lang` > `SHADOW_DEV_LANG` > locale 探测 > 默认 zh，且只影响 stderr 文案。
 - `nextStep` 为 additive 字段，写入发生在 planHash 持久化与计算之后，不得参与 hash 输入。
 - help 的 `data.help` 恒为字符串（概览默认唯一字段，最小面 <1KB）；结构化目录 `data.commands` 经 `--full` opt-in；`help <命令>` 组详情恒定返回该组 `commands`。
@@ -30,7 +32,7 @@ verified: 2026-09-17
 
 ## 验证方式
 
-`node --test test/cli.test.mjs` 全绿即契约成立（关键用例：`human layer: banners and hints on stderr, stdout contract language-invariant`、`SHADOW_DEV_QUIET silences the human channel`）。手工复验：`shadow-dev help --lang zh` 与 `--lang en` 的 stdout 应 diff 为空、stderr 应不同；`SHADOW_DEV_QUIET=1 shadow-dev repo inspect` 的 stderr 应为空。
+`node --test test/cli.test.mjs` 全绿即契约成立（关键用例：`jsonEnabled routes the JSON surface by environment and explicit flags`、`TTY suppresses stdout JSON; --json and env restore it; planHash surfaces on stderr`、`human layer: banners and hints on stderr, stdout contract language-invariant`、`SHADOW_DEV_QUIET silences the human channel`）。手工复验：管道中 `shadow-dev repo inspect | jq .` 有 JSON；TTY 终端里 `shadow-dev help` 只见中文表、`shadow-dev --json help` 恢复 JSON；`SHADOW_DEV_QUIET=1 shadow-dev repo inspect` 的 stderr 应为空。
 
 ## 关联知识
 

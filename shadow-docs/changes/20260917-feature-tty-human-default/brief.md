@@ -4,9 +4,9 @@
   "name": "20260917-feature-tty-human-default",
   "type": "feature",
   "scope": "cli.mjs,lib",
-  "status": "proposed",
+  "status": "reviewed",
   "baseBranch": "main",
-  "branch": null,
+  "branch": "feature/20260917-feature-tty-human-default",
   "files": [
     "README.md",
     "cli.mjs",
@@ -24,14 +24,14 @@
     "pullRequestUrl": null
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "7fe26cf427bff1d2bc8714b3167ff3f02e3a7586",
+    "verifiedAt": "2026-09-17T08:34:24.447Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:9",
-    "planHash": "3b465a0a2be42f724fc9a72998f3445419f963e2347e03708ab1ce829f1a36b4",
+    "checkpoint": "7fe26cf427bff1d2bc8714b3167ff3f02e3a7586",
+    "planHash": "8b02b8b9a2e61b416b26fd0ee4b46dbbb3852fcd2282b42b33bd0f167ee8bf2c",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -41,6 +41,11 @@
         "feature"
       ]
     }
+  },
+  "knowledge": {
+    "action": "更新",
+    "target": "shadow-docs/knowledge/cli-output-contract.md",
+    "reason": "stdout 恒 JSON 条款修订为按环境路由（管道默认/TTY 显式），TTY 抑制时退出码与 planHash 透出为新增约束"
   }
 }
 ---
@@ -70,24 +75,24 @@
 
 ### Phase 1 — 契约测试先行（TDD）
 
-- [ ] `jsonEnabled` 纯函数单测：pipe 无 flag=true、TTY 无 flag=false、TTY+--json=true、env 强制=true —— `test/cli.test.mjs` `lib/output.mjs`
-- [ ] 存量 47 项 subprocess 测试保持绿色（spawnSync 管道非 TTY 路径），新增断言：管道无 `--json` 仍出 JSON、有 `--json` 单行不 pretty —— `test/cli.test.mjs`
+- [x] `jsonEnabled` 纯函数单测：pipe 无 flag=true、TTY 无 flag=false、TTY+--json=true、env 强制=true —— `test/cli.test.mjs` `lib/output.mjs`
+- [x] 存量 47 项 subprocess 测试保持绿色（spawnSync 管道非 TTY 路径），新增断言：管道无 `--json` 仍出 JSON、有 `--json` 单行不 pretty —— `test/cli.test.mjs`
 
 ### Phase 2 — 实现
 
-- [ ] `lib/output.mjs`：新增 `jsonEnabled`/`emit`，`out`/`fail` 收拢 —— `lib/output.mjs`
-- [ ] `cli.mjs` 出口改 `emit(v, o)`；`lib/human.mjs` 收场行透出 `planHash`（plan 信封存在时）与写结果 checkpoint —— `cli.mjs` `lib/human.mjs`
-- [ ] `--json` 从"无操作兼容参数"升级为契约开关，README「--json」段落改写 —— `README.md`
+- [x] `lib/output.mjs`：新增 `jsonEnabled`/`emit`，`out`/`fail` 收拢 —— `lib/output.mjs`
+- [x] `cli.mjs` 出口改 `emit(v, o)`；`lib/human.mjs` 收场行透出 `planHash`（plan 信封存在时）与写结果 checkpoint —— `cli.mjs` `lib/human.mjs`
+- [x] `--json` 从"无操作兼容参数"升级为契约开关，README「--json」段落改写 —— `README.md`
 
 ### Phase 3 — 回归与文档知识
 
-- [ ] README 输出模型段落更新（管道默认/TTY 默认/开关）；全量回归 —— `README.md` `test/cli.test.mjs`
-- [ ] 更新卡片 `cli-output-contract.md`（新规则 + source 追加）与 menu 关键词 —— `shadow-docs/knowledge/cli-output-contract.md` `shadow-docs/menu.md`
+- [x] README 输出模型段落更新（管道默认/TTY 默认/开关）；全量回归 —— `README.md` `test/cli.test.mjs`
+- [x] 更新卡片 `cli-output-contract.md`（新规则 + source 追加）与 menu 关键词 —— `shadow-docs/knowledge/cli-output-contract.md` `shadow-docs/menu.md`
 
 ## 结果
 
-- 实际耗时: —
-- 验证: —
+- 实际耗时: 约 25 分钟
+- 验证: `node --test` 49/49（47 存量经管道路径零改动全绿 + 2 新增：jsonEnabled 纯函数矩阵、假 TTY 子进程行为含 planHash 透出与退出码）；实现与 brief 微偏差一处：出口门控直接 `jsonEnabled(o)` 内联于 cli.mjs，未另抽 emit 抽象（行为等价，避免薄封装）；顺带修复 `--help` 不在布尔参数表导致的 `--help --json` 值吞噬隐患。
 
 ## 知识评估
 

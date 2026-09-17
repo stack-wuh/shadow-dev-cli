@@ -232,6 +232,48 @@ test('mutating results carry a stable untranslated nextStep in JSON', () => {
   assert.match(en.stderr, /next/i)
 })
 
+function runTty(args, cwd = process.cwd(), env = {}) {
+  const url = String(new URL('../cli.mjs', import.meta.url))
+  const script = `process.stdout.isTTY = true; process.argv = [process.execPath, ${JSON.stringify(CLI)}, ${args.map(a => JSON.stringify(String(a))).join(', ')}]; await import(${JSON.stringify(url)})`
+  return spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd, encoding: 'utf8', env: { ...process.env, ...env } })
+}
+
+test('jsonEnabled routes the JSON surface by environment and explicit flags', async () => {
+  const { jsonEnabled } = await import('../lib/output.mjs')
+  const tty = process.stdout.isTTY, env = process.env.SHADOW_DEV_JSON
+  try {
+    process.stdout.isTTY = false
+    assert.equal(jsonEnabled({}), true, 'pipe default emits JSON')
+    assert.equal(jsonEnabled({ json: true }), true)
+    process.stdout.isTTY = true
+    assert.equal(jsonEnabled({}), false, 'TTY default suppresses JSON')
+    assert.equal(jsonEnabled({ json: true }), true, '--json forces JSON on TTY')
+    process.stdout.isTTY = undefined
+    process.env.SHADOW_DEV_JSON = '1'
+    assert.equal(jsonEnabled({}), true, 'env override forces JSON')
+  } finally {
+    process.stdout.isTTY = tty
+    if (env === undefined) delete process.env.SHADOW_DEV_JSON; else process.env.SHADOW_DEV_JSON = env
+  }
+})
+
+test('TTY suppresses stdout JSON; --json and env restore it; planHash surfaces on stderr', () => {
+  const plain = runTty(['--help'])
+  assert.equal(plain.status, 0, plain.stderr)
+  assert.equal(plain.stdout.trim(), '', 'interactive help must not print JSON')
+  assert.match(plain.stderr, /shadow-dev 命令一览/)
+  const forced = runTty(['--help', '--json'])
+  assert.equal(JSON.parse(forced.stdout).command, 'help')
+  const root = fixture()
+  assert.equal(JSON.parse(runTty(['repo', 'inspect'], root, { SHADOW_DEV_JSON: '1' }).stdout).command, 'repo.inspect')
+  const planned = runTty(['branch', 'plan', '--name', 'sample'], root)
+  assert.equal(planned.stdout.trim(), '')
+  assert.match(planned.stderr, /planHash: [0-9a-f]{64}/)
+  const bogus = runTty(['bogus'], root)
+  assert.equal(bogus.status, 1)
+  assert.equal(bogus.stdout.trim(), '', 'suppressed errors still exit nonzero without printing')
+})
+
 test('help defaults to a compact summary; --full adds the structured catalog', () => {
   const overview = run(['help', '--lang', 'zh'])
   const data = JSON.parse(overview.stdout).data

@@ -24,11 +24,11 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 | `archive plan\|execute` | 归档已合并变更并重建 INDEX |
 | `index rebuild plan\|execute` | 重建变更索引 |
 
-所有输出为单行 JSON：成功 `{"ok":true,"command":...,"data":...}`，失败 `{"ok":false,"error":{"code","message"}}`。`--json` 参数为历史兼容保留，接受即无操作（输出恒为 JSON）。带流程后继的命令，成功结果的 `data.nextStep` 给出下一步建议命令（稳定英文模板，不随语言变化，agent 可直接消费）。
+**输出模型**：JSON 是机器契约面——单行格式，成功 `{"ok":true,"command":...,"data":...}`，失败 `{"ok":false,"error":{"code","message"}}`。其出现按环境路由：管道/重定向（agent、脚本）默认输出；**交互终端默认不输出 JSON，只看人用层**，任何环境想显式拿 JSON 用 `--json` 或 `SHADOW_DEV_JSON=1`。退出码不受 JSON 抑制影响。带流程后继的命令，成功结果的 `data.nextStep` 给出下一步建议命令（稳定英文模板，不随语言变化，agent 可直接消费）。
 
 ## 人用输出层（stderr）
 
-stdout 的 JSON 契约之外，CLI 在 stderr 渲染一层人类提示：进场横幅（命令+参数）、收场摘要（结果+耗时）、`nextStep` 引导、错误码的本地化解释与示例命令。stderr 内容不承载契约，可随时关闭。
+CLI 在 stderr 渲染一层人类提示：进场横幅（命令+参数）、收场摘要（结果+耗时，plan 命令含 `planHash`）、`nextStep` 引导、错误码的本地化解释与示例命令。stderr 内容不承载 JSON 契约，可随时关闭；但在交互终端抑制 stdout JSON 时它是唯一信息通道，`plan` 收场行的 `planHash` 即可直接取用。
 
 - 语言解析：`--lang zh|en` > `SHADOW_DEV_LANG` > 系统 locale 自动探测 > 默认 `zh`。非法取值报 `INVALID_LANG`（退出码 2）。
 - 关闭提示：`SHADOW_DEV_QUIET=1`（或 `true`）时 stderr 零输出，适合日志管道。
