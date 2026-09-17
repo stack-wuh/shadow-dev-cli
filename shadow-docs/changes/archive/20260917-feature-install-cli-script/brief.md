@@ -4,7 +4,7 @@
   "name": "20260917-feature-install-cli-script",
   "type": "feature",
   "scope": "scripts",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-install-cli-script",
   "files": [
@@ -21,13 +21,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "38b13641d0167403b99e557e3e1fe8df4d321183",
-    "verifiedAt": "2026-09-17T09:21:06.983Z"
+    "verifiedCommit": "62ecd070f668671316d69d544dfb008b9ef36916",
+    "verifiedAt": "2026-09-17T09:27:15.137Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:13",
-    "planHash": "9f6178c08054b867c2105d6331097ca8fbbab78d388d8dc468d044aa437d3e8e",
+    "checkpoint": "merged-pr:13",
+    "planHash": "e37b06db52f5611b62cdd2da728c84cb687b8b2352a08fd5176b2454883fcdc1",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
