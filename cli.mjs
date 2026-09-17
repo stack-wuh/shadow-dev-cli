@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { args } from './lib/args.mjs'
-import { out, fail } from './lib/output.mjs'
+import { out, fail, jsonEnabled } from './lib/output.mjs'
 import { plan } from './lib/plan.mjs'
 import { root } from './lib/git.mjs'
 import { brief, write } from './lib/brief.mjs'
@@ -96,8 +96,9 @@ try {
     v = human.decorate(await handle(root(), p, o), o)
     human.done(L, v, Date.now() - t0)
   }
-  out(v)
+  if (jsonEnabled(o)) out(v)
 } catch (e) {
   human.error(L, e, p)
-  fail(e.code || e.message, e.message, e.status || 1)
+  if (jsonEnabled(o)) fail(e.code || e.message, e.message, e.status || 1)
+  else process.exitCode = e.status || 1
 }
