@@ -175,12 +175,28 @@ test('change list enumerates active briefs and skips archive and unreadable dirs
   assert.equal(result.status, 0, result.stderr)
   const payload = JSON.parse(result.stdout)
   assert.equal(payload.command, 'change.list')
-  assert.deepEqual(payload.data.changes, [{ name: 'sample', type: 'feat', status: 'draft', branch: null }])
+  assert.deepEqual(payload.data.changes, [{ name: 'sample', type: 'feat', status: 'draft', branch: null, archived: false }])
   mkdirSync(join(root, 'shadow-docs', 'changes', 'archive', 'old'), { recursive: true })
   writeFileSync(join(root, 'shadow-docs', 'changes', 'archive', 'old', 'brief.md'), '---\n{"schema":"shadow-dev/v1","name":"old","type":"feat","status":"archived"}\n---\nbody\n')
   mkdirSync(join(root, 'shadow-docs', 'changes', 'broken'), { recursive: true })
   const second = JSON.parse(run(['change', 'list'], root).stdout)
-  assert.deepEqual(second.data.changes, [{ name: 'sample', type: 'feat', status: 'draft', branch: null }])
+  assert.deepEqual(second.data.changes, [{ name: 'sample', type: 'feat', status: 'draft', branch: null, archived: false }])
+})
+
+test('change list --all merges active and archived; --archived scopes to archive', () => {
+  const root = fixture()
+  mkdirSync(join(root, 'shadow-docs', 'changes', 'archive', 'aaa-old'), { recursive: true })
+  writeFileSync(join(root, 'shadow-docs', 'changes', 'archive', 'aaa-old', 'brief.md'), '---\n{"schema":"shadow-dev/v1","name":"aaa-old","type":"feat","status":"archived","branch":null}\n---\nbody\n')
+  mkdirSync(join(root, 'shadow-docs', 'changes', 'archive', 'broken'), { recursive: true })
+  const both = JSON.parse(run(['change', 'list', '--all'], root).stdout)
+  assert.deepEqual(both.data.changes, [
+    { name: 'aaa-old', type: 'feat', status: 'archived', branch: null, archived: true },
+    { name: 'sample', type: 'feat', status: 'draft', branch: null, archived: false },
+  ])
+  const only = JSON.parse(run(['change', 'list', '--archived'], root).stdout)
+  assert.deepEqual(only.data.changes, [{ name: 'aaa-old', type: 'feat', status: 'archived', branch: null, archived: true }])
+  const superset = JSON.parse(run(['change', 'list', '--all', '--archived'], root).stdout)
+  assert.deepEqual(superset.data.changes, both.data.changes, 'passing both flags behaves as --all')
 })
 
 test('task list exposes stable task identifiers', () => {

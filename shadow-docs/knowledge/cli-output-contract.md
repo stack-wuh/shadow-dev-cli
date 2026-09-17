@@ -9,6 +9,7 @@ source:
   - changes/20260917-feature-help-compact-noise/brief.md
   - changes/20260917-feature-tty-human-default/brief.md
   - changes/20260917-fix-missing-arg-hints/brief.md
+  - changes/20260917-feature-change-list-archived/brief.md
 verified: 2026-09-17
 ---
 
@@ -22,7 +23,7 @@ verified: 2026-09-17
 
 - 任何新增输出必须二选一：进 stdout JSON 契约（视为公开 API，需测试钉住），或进 stderr 人用层；**禁止**向 stdout 写非 JSON 内容。
 - 缺必填参数报错时，stderr 必须从 `COMMANDS` 逐行列出缺失参数的目录描述（`flag * desc`，经 `human.argLine` 与 help 详情共用同一渲染），示例行占位符与目录 example 一致（变更名为 `<change-name>`）；`HINTS` 只保留 code 级短句兜底，不得重复目录中的参数说明。
-- `shadow-dev change list` 是变更名发现入口：stdout 契约 `data.changes:[{name,type,status,branch}]`（按 name 排序），只列 `shadow-docs/changes/` 活动目录，archive 与解析失败目录静默跳过（与 indexer 同规则）。
+- `shadow-dev change list` 是变更名发现入口：stdout 契约 `data.changes:[{name,type,status,branch,archived}]`（按 name 排序）。默认只列 `shadow-docs/changes/` 活动目录（条目 `archived:false`）；`--all` 合并归档条目（`archived:true`），`--archived` 只列归档，两参同传按超集 `--all`；解析失败目录静默跳过（与 indexer 同规则，双目录扫描复用 `brief(r, name, archived)` 第三参）。新增无值布尔 flag 必须在 `lib/args.mjs` 白名单登记，否则会被当作取值 flag 吞掉后随参数。
 - 抑制 stdout 的分支必须仍然设置退出码；plan 的人用收场行必须透出 `planHash`（PTY 环境下的 agent 兜底）。`--json` 是跨环境逃生门，不得复用为其他语义。
 - 错误 code 与 `data.nextStep` 模板永不本地化；语言链固定为 `--lang` > `SHADOW_DEV_LANG` > locale 探测 > 默认 zh，且只影响 stderr 文案。
 - `nextStep` 为 additive 字段，写入发生在 planHash 持久化与计算之后，不得参与 hash 输入。
@@ -35,7 +36,7 @@ verified: 2026-09-17
 
 ## 验证方式
 
-`node --test test/cli.test.mjs` 全绿即契约成立（关键用例：`jsonEnabled routes the JSON surface by environment and explicit flags`、`TTY suppresses stdout JSON; --json and env restore it; planHash surfaces on stderr`、`human layer: banners and hints on stderr, stdout contract language-invariant`、`SHADOW_DEV_QUIET silences the human channel`、`missing required args render from the command catalog on stderr`、`change list enumerates active briefs and skips archive and unreadable dirs`）。手工复验：管道中 `shadow-dev repo inspect | jq .` 有 JSON；TTY 终端里 `shadow-dev help` 只见中文表、`shadow-dev --json help` 恢复 JSON；`SHADOW_DEV_QUIET=1 shadow-dev repo inspect` 的 stderr 应为空；`shadow-dev task list`（不带参数）的 stderr 应含 `--name * 变更名（shadow-docs/changes/ 下的子目录…）` 参数行。
+`node --test test/cli.test.mjs` 全绿即契约成立（关键用例：`jsonEnabled routes the JSON surface by environment and explicit flags`、`TTY suppresses stdout JSON; --json and env restore it; planHash surfaces on stderr`、`human layer: banners and hints on stderr, stdout contract language-invariant`、`SHADOW_DEV_QUIET silences the human channel`、`missing required args render from the command catalog on stderr`、`change list enumerates active briefs and skips archive and unreadable dirs`、`change list --all merges active and archived; --archived scopes to archive`）。手工复验：`shadow-dev change list --archived` 应列出 `changes/archive/` 下全部条目且 `archived:true`；管道中 `shadow-dev repo inspect | jq .` 有 JSON；TTY 终端里 `shadow-dev help` 只见中文表、`shadow-dev --json help` 恢复 JSON；`SHADOW_DEV_QUIET=1 shadow-dev repo inspect` 的 stderr 应为空；`shadow-dev task list`（不带参数）的 stderr 应含 `--name * 变更名（shadow-docs/changes/ 下的子目录…）` 参数行。
 
 ## 关联知识
 
