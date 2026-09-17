@@ -4,7 +4,7 @@
   "name": "20260917-feature-help-compact-noise",
   "type": "feature",
   "scope": "cli.mjs,lib",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-help-compact-noise",
   "files": [
@@ -25,13 +25,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "3ce1f05be660649cd2b1ccc89c65c280fe4939f2",
-    "verifiedAt": "2026-09-17T08:06:11.158Z"
+    "verifiedCommit": "dc345d5dc9d63a1ce6ee478070bbae87cec39ff2",
+    "verifiedAt": "2026-09-17T08:25:18.380Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:8",
-    "planHash": "018c3ab86a8c050e54123235ca55b59fa7f45c79a058fa6e8fc992a786e48f07",
+    "checkpoint": "merged-pr:8",
+    "planHash": "93cf17e6e0c59f5fc6429d40f16833cb39421dbeb2aaf0d1e561c8cdd4c0e550",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -45,7 +45,7 @@
   "knowledge": {
     "action": "更新",
     "target": "shadow-docs/knowledge/cli-output-contract.md",
-    "reason": "输出面规则扩展：概览默认最小面（data.help 字符串恒形状），结构化 commands 经 --full opt-in，组详情恒定结构化"
+    "reason": "输出面规则扩展：概览默认最小面（data.help 字符串），结构化 commands 经 --full opt-in"
   }
 }
 ---
