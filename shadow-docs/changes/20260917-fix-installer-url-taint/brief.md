@@ -4,7 +4,7 @@
   "name": "20260917-fix-installer-url-taint",
   "type": "fix",
   "scope": "scripts",
-  "status": "branched",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "fix/20260917-fix-installer-url-taint",
   "files": [
@@ -18,14 +18,14 @@
     "pullRequestUrl": null
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "07ee09d311cf428bd0bff535b71c46347c74d0ec",
+    "verifiedAt": "2026-09-17T09:38:17.072Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:14",
-    "planHash": "f01064a4d5bd9da86b816992d47dab31894ef05c6904f9dcbb8674754964b75d",
+    "checkpoint": "07ee09d311cf428bd0bff535b71c46347c74d0ec",
+    "planHash": "4932f37ed4a23e22f402c632d254a3907f58e17e7474645733752772e06fac20",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -35,6 +35,11 @@
         "fix"
       ]
     }
+  },
+  "knowledge": {
+    "action": "无需变更",
+    "target": null,
+    "reason": null
   }
 }
 ---
