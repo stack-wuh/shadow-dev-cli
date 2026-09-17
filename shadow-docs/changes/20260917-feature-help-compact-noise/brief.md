@@ -4,7 +4,7 @@
   "name": "20260917-feature-help-compact-noise",
   "type": "feature",
   "scope": "cli.mjs,lib",
-  "status": "branched",
+  "status": "published",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-help-compact-noise",
   "files": [
@@ -20,18 +20,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 7,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/7",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 8,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/8"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "3ce1f05be660649cd2b1ccc89c65c280fe4939f2",
+    "verifiedAt": "2026-09-17T08:06:11.158Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:7",
-    "planHash": "5ccc421869991a94b4be9eea88ad988aaa3270a2b6473920d9c506885a32ce28",
+    "checkpoint": "pr:8",
+    "planHash": "018c3ab86a8c050e54123235ca55b59fa7f45c79a058fa6e8fc992a786e48f07",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -41,6 +41,11 @@
         "feature"
       ]
     }
+  },
+  "knowledge": {
+    "action": "更新",
+    "target": "shadow-docs/knowledge/cli-output-contract.md",
+    "reason": "输出面规则扩展：概览默认最小面（data.help 字符串恒形状），结构化 commands 经 --full opt-in，组详情恒定结构化"
   }
 }
 ---
