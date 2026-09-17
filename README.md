@@ -33,7 +33,7 @@ stdout 的 JSON 契约之外，CLI 在 stderr 渲染一层人类提示：进场�
 - 语言解析：`--lang zh|en` > `SHADOW_DEV_LANG` > 系统 locale 自动探测 > 默认 `zh`。非法取值报 `INVALID_LANG`（退出码 2）。
 - 关闭提示：`SHADOW_DEV_QUIET=1`（或 `true`）时 stderr 零输出，适合日志管道。
 - 语言只影响 stderr 文案；错误 code、JSON 结构、`nextStep` 模板均不本地化。
-- `shadow-dev help` 输出全部命令的结构化目录（`data.help` 保留原字符串 + `data.commands` 明细）；`shadow-dev help <命令>` 查看单命令的参数、必填项与示例。
+- `shadow-dev help` 概览默认只回最小面：`data.help`（命令一览字符串，约 350 字节）；agent 需要结构化明细（usage/参数/必填/示例/nextStep）时用 `shadow-dev help --full`。`shadow-dev help <命令>` 查看单组详情，恒定结构化（组面小）。stderr 中文命令表不受 `--full` 影响。
 
 ## 平台兼容
 
