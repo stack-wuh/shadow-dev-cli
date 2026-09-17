@@ -4,7 +4,7 @@
   "name": "20260917-fix-plan-credential-chain",
   "type": "fix",
   "scope": "lib",
-  "status": "branched",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20260917-fix-plan-credential-chain",
   "files": [
@@ -19,18 +19,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 5,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/5",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 6,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/6"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "d614b8067d457c10144105703ffab61305c00e6a",
+    "verifiedAt": "2026-09-17T07:40:38.557Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:5",
-    "planHash": "a92fc185a61148c301916c72c6501c29fa085e9124e4ab4feaf8b1a181a0108e",
+    "checkpoint": "merged-pr:6",
+    "planHash": "689a605975f70075d02314b6b6ce0852bc7e662b9f080be46ba874eb1ce6bfab",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -40,6 +40,11 @@
         "fix"
       ]
     }
+  },
+  "knowledge": {
+    "action": "新增",
+    "target": "shadow-docs/knowledge/plan-credential-chain.md",
+    "reason": "planHash 剥离边界与凭证存放规则是核心机制约束，新增域必须遵守"
   }
 }
 ---
