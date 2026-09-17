@@ -59,12 +59,26 @@ CLI 在 stderr 渲染一层人类提示：进场横幅（命令+参数）、收�
 
 ## 安装与分发
 
-本 CLI 随 [shadow-dev-workflow](https://github.com/stack-wuh/shadow-dev-workflow) 插件通过安装脚本分发：插件仓库执行 `scripts/install-cli.sh` 从本仓库 release 拉取目录产物。独立使用时克隆本仓库后直接 `node cli.mjs --help`。
+`scripts/install-cli.sh` 是唯一安装入口，供 [shadow-dev-workflow](https://github.com/stack-wuh/shadow-dev-workflow) 插件钩子与手工共用：
+
+```bash
+bash scripts/install-cli.sh install            # 拉取最新 release，物化+自校验+生成托管 shim
+bash scripts/install-cli.sh install --json     # 插件钩子用：单行机器输出（幂等，已最新秒退）
+bash scripts/install-cli.sh status --json      # 当前/上一版本指针
+bash scripts/install-cli.sh rollback           # 切回上一版（离线，不触网）
+bash scripts/install-cli.sh install --from dist/shadow-dev-cli-v1.1.0.tar.gz  # 离线安装
+```
+
+- 布局：`~/.local/share/shadow-dev-cli/shadow-dev-cli-<ver>/` + `CURRENT`/`PREVIOUS` 指针文件；shim（`~/.local/bin/shadow-dev` 与 `.cmd`）运行时读指针——更新与回滚都不再改动 shim 文件。自定义位置用 `--prefix` / `--bin`。
+- 安全边界：发布前先物化并自跑 `help --json`，失败则指针不动（旧版本照常可用）；shim 路径被**非托管**同名文件占用时告警退出、绝不覆盖；并发运行有锁（陈旧 10 分钟自动接管）。
+- 退出码：`0` 成功/已最新 · `1` 参数或冲突 · `2` 网络/GitHub API · `3` 产物自校验失败。信任边界为 HTTPS + GitHub 仓库，未做独立校验和。
+- 通道：默认 release（可复现）；`--version v*` 锁版本；`--channel main` git 浅拉 rolling，仅供插件开发。依赖 bash + node(≥20) + tar（main 通道另需 git；curl 缺失自动退 wget），Windows 在 Git Bash 下运行。
+- 纯手工使用（不装 shim）：克隆本仓库后直接 `node cli.mjs --help`。
 
 ## 开发
 
 ```bash
-npm test   # node --test，47 个契约测试覆盖全部命令域、stderr 人用层与凭证链
+npm test   # node --test，49 项 CLI 契约 + 6 项安装器契约（离线产物全链、冲突保护、回滚、自校验）
 ```
 
 行为契约：命令、JSON 输出结构、错误码、planHash 机制保持稳定；`test/cli.test.mjs` 是唯一契约规格。
