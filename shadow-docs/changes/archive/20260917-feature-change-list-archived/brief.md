@@ -4,7 +4,7 @@
   "name": "20260917-feature-change-list-archived",
   "type": "feature",
   "scope": null,
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-change-list-archived",
   "files": [],
@@ -12,18 +12,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 17,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/17",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 18,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/18"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "f10148117080397c1d76b75ae12a7492fb7867af",
-    "verifiedAt": "2026-09-17T11:59:26.844Z"
+    "verifiedCommit": "1a50c0edb9e3cbb06d9a4ca29e00e4bde881de17",
+    "verifiedAt": "2026-09-17T12:05:18.083Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:17",
-    "planHash": "e5ee5e90f8f71653279dd3e219f28d4aabf002430d986f6131d74a78871b662a",
+    "checkpoint": "merged-pr:18",
+    "planHash": "c7b927f4519fdc6879680642163cf4a0b5931f1caadf10ca7037754a33b0d5d3",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -81,8 +81,10 @@
 
 ## 结果
 
-- 实际耗时: —
-- 验证: —
+- 实际耗时: 约 35 分钟（propose→apply→review→release→archive 全程）
+- 验证: `node --test test/cli.test.mjs` exit=0（52 用例，含新增 `change list --all merges active and archived; --archived scopes to archive`）；`node --test test/install.test.mjs` exit=0（6 用例）；真实仓库手工复验 `change list --archived` 列出 8 条归档条目（`archived:true`）、`--all` 合并 9 条按 name 排序、默认行为仅新增 `archived:false` 字段。
+- 计划外必要扩展: `lib/args.mjs` 布尔 flag 白名单需登记 `--all`/`--archived`（TDD 红阶段暴露：未登记时取值 flag 吞掉后随参数）——已沉淀为 `cli-output-contract.md` 执行约束，README 契约用例计数 49→52 一并修正。
+- 过程记录: 三次 `PLAN_HASH_INVALID` 均为凭证链正确防护——①execute 参数与 plan 不一致（xargs 拆碎 `--reason`）；②commit plan 与 execute 之间插入 publish plan 写回 brief；③review 的 `verifiedCommit` 钉在 commit 前 HEAD，archive 前需以含码 commit 重跑 review。教训：**plan→execute 必须闭环连跑且 execute 带全 plan 参数，review 应在 commit 之后执行。**
 
 ## 知识评估
 
