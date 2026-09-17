@@ -4,7 +4,7 @@
   "name": "20260917-fix-missing-arg-hints",
   "type": "fix",
   "scope": "cli,lib/human,lib/i18n,lib/commands,lib/domains",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20260917-fix-missing-arg-hints",
   "files": [
@@ -20,18 +20,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 12,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/12",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 16,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/16"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "ffff1a47542d91708c304e96409c51179464bfa7",
-    "verifiedAt": "2026-09-17T09:40:49.587Z"
+    "verifiedCommit": "811ebde858c10f49fa7bb7dcfa802f35ac674e11",
+    "verifiedAt": "2026-09-17T11:33:30.464Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:12",
-    "planHash": "d29e8d83e1938d0aba3729a1626d0490e77964b852425a77a11782eee2ae66f3",
+    "checkpoint": "merged-pr:16",
+    "planHash": "e335f09583f35506a7c4026796f118ad60cb51373a5e4d566cb582cb3cc7621b",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
