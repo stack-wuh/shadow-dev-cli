@@ -121,12 +121,13 @@ else
   API_PATH=$([ -n "$VERSION" ] && echo "/releases/tags/$VERSION" || echo "/releases/latest")
   TMP="$(mktemp -d)"; trap 'rm -rf "$LOCK" "$TMP" 2>/dev/null || true' EXIT
   DL "$API$API_PATH" "$TMP/rel.json" || die 2 network "GitHub API request failed ($API$API_PATH)"
-  URL="$(node -pe '
+  URL="$(node -e '
     const j = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))
     const a = (j.assets || []).find(x => /^shadow-dev-cli-v[0-9][0-9.]*\.tar\.gz$/.test(x.name))
     if (!a) process.exit(1)
-    process.stdout.write(a.browser_download_url)
+    console.log(a.browser_download_url)
   ' "$TMP/rel.json")" || die 2 network "release asset not found"
+  case "$URL" in *tar.gz) ;; *) die 2 network "malformed asset url: $URL" ;; esac
   VER="$(node -pe 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).tag_name.replace(/^v/,"")' "$TMP/rel.json")"
   DL "$URL" "$TMP/artifact.tgz" || die 2 network "artifact download failed"
   tar -xzf "$TMP/artifact.tgz" -C "$TMP"
