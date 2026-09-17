@@ -71,6 +71,7 @@ async function handle(r, p, o) {
   if (d === 'task' && a === 'set') return { ok: true, command: 'task.set', data: task.set(r, o) }
   if (d === 'change' && a === 'create') return { ok: true, command: 'change.create', data: change.create(r, o) }
   if (d === 'change' && a === 'approve') return { ok: true, command: 'change.approve', data: change.approve(r, o) }
+  if (d === 'change' && a === 'list') return { ok: true, command: 'change.list', data: change.list(r) }
   if (Object.hasOwn(DOMAINS, d)) {
     const verb = a === 'rebuild' ? s : a, c = a === 'rebuild' ? `${d}.rebuild` : d
     if (verb === 'plan') return await planDomain(c, DOMAINS[d], r, o)
@@ -98,7 +99,7 @@ try {
   }
   if (jsonEnabled(o)) out(v)
 } catch (e) {
-  human.error(L, e, p)
+  human.error(L, e, p, o)
   if (jsonEnabled(o)) fail(e.code || e.message, e.message, e.status || 1)
   else process.exitCode = e.status || 1
 }
