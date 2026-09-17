@@ -4,7 +4,7 @@
   "name": "20260917-fix-missing-arg-hints",
   "type": "fix",
   "scope": "cli,lib/human,lib/i18n,lib/commands,lib/domains",
-  "status": "branched",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "fix/20260917-fix-missing-arg-hints",
   "files": [
@@ -24,14 +24,14 @@
     "pullRequestUrl": null
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "ffff1a47542d91708c304e96409c51179464bfa7",
+    "verifiedAt": "2026-09-17T09:40:49.587Z"
   },
   "workflow": {
     "operation": null,
     "checkpoint": "issue:12",
-    "planHash": "8dd3e7cf972e43df8efc9ff4504599503e3e2c6e9609556b73a6d4e800b8f5f6",
+    "planHash": "d29e8d83e1938d0aba3729a1626d0490e77964b852425a77a11782eee2ae66f3",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -41,6 +41,11 @@
         "fix"
       ]
     }
+  },
+  "knowledge": {
+    "action": "更新",
+    "target": "shadow-docs/knowledge/cli-output-contract.md",
+    "reason": "缺参错误新增从命令目录 args 派生渲染的约束；example 占位符统一为 <change-name>；新增 change list 契约面"
   }
 }
 ---

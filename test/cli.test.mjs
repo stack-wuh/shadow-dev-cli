@@ -169,6 +169,20 @@ test('change approve transitions draft to proposed', () => {
   assert.match(readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8'), /"status": "proposed"/)
 })
 
+test('change list enumerates active briefs and skips archive and unreadable dirs', () => {
+  const root = fixture()
+  const result = run(['change', 'list'], root)
+  assert.equal(result.status, 0, result.stderr)
+  const payload = JSON.parse(result.stdout)
+  assert.equal(payload.command, 'change.list')
+  assert.deepEqual(payload.data.changes, [{ name: 'sample', type: 'feat', status: 'draft', branch: null }])
+  mkdirSync(join(root, 'shadow-docs', 'changes', 'archive', 'old'), { recursive: true })
+  writeFileSync(join(root, 'shadow-docs', 'changes', 'archive', 'old', 'brief.md'), '---\n{"schema":"shadow-dev/v1","name":"old","type":"feat","status":"archived"}\n---\nbody\n')
+  mkdirSync(join(root, 'shadow-docs', 'changes', 'broken'), { recursive: true })
+  const second = JSON.parse(run(['change', 'list'], root).stdout)
+  assert.deepEqual(second.data.changes, [{ name: 'sample', type: 'feat', status: 'draft', branch: null }])
+})
+
 test('task list exposes stable task identifiers', () => {
   const root = fixture()
   const result = run(['task', 'list', '--name', 'sample', '--json'], root)
@@ -220,6 +234,24 @@ test('validation errors carry localized usage hints on stderr', () => {
   assert.equal(result.status, 1)
   assert.equal(JSON.parse(result.stdout).error.code, 'NAME_REQUIRED')
   assert.match(result.stderr, /--name/)
+})
+
+test('missing required args render from the command catalog on stderr', () => {
+  const root = fixture()
+  const zh = run(['task', 'list', '--lang', 'zh'], root)
+  assert.equal(zh.status, 1)
+  const machine = JSON.parse(zh.stdout).error
+  assert.equal(machine.code, 'NAME_REQUIRED')
+  assert.equal(machine.message, 'NAME_REQUIRED: pass --name <change-name>, e.g. --name 20260917-feature-x', 'stdout machine message is frozen')
+  assert.match(zh.stderr, /--name \* 变更名（shadow-docs\/changes\/ 下的子目录，如 20260917-feature-x）/)
+  assert.match(zh.stderr, /示例: shadow-dev task list --name <change-name>/)
+  const en = run(['task', 'list', '--lang', 'en'], root)
+  assert.equal(zh.stdout, en.stdout, 'machine contract stays language-invariant')
+  assert.match(en.stderr, /--name \* change name \(subdirectory under shadow-docs\/changes\/, e\.g\. 20260917-feature-x\)/)
+  const multi = run(['task', 'set', '--name', 'sample', '--lang', 'zh'], root)
+  assert.match(multi.stderr, /--task \* 任务 id，如 task-3/)
+  assert.match(multi.stderr, /--state \* todo\|done/)
+  assert.match(multi.stderr, /--confirm \* 写操作显式确认/)
 })
 
 test('mutating results carry a stable untranslated nextStep in JSON', () => {

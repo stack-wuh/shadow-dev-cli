@@ -9,7 +9,7 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 | 命令 | 说明 |
 |------|------|
 | `repo inspect` | 查看仓库状态（分支、HEAD、脏文件） |
-| `change create\|approve` | 创建/批准变更 brief |
+| `change create\|approve\|list` | 创建/批准变更 brief；列出活动变更 |
 | `issue plan\|execute` | 创建 GitHub issue |
 | `branch plan\|execute` | 建功能分支 |
 | `sync plan\|execute` | fast-forward 同步上游 |
@@ -33,6 +33,7 @@ CLI 在 stderr 渲染一层人类提示：进场横幅（命令+参数）、收�
 - 语言解析：`--lang zh|en` > `SHADOW_DEV_LANG` > 系统 locale 自动探测 > 默认 `zh`。非法取值报 `INVALID_LANG`（退出码 2）。
 - 关闭提示：`SHADOW_DEV_QUIET=1`（或 `true`）时 stderr 零输出，适合日志管道。
 - 语言只影响 stderr 文案；错误 code、JSON 结构、`nextStep` 模板均不本地化。
+- 缺必填参数报错时，stderr 逐行列出该命令在命令目录中的完整参数描述（`flag * 说明`，含示例值与来源位置），示例行的占位符与目录一致（如 `--name <change-name>`）——提示与人用 help 共享同一事实源 `lib/commands.mjs`。
 - `shadow-dev help` 概览默认只回最小面：`data.help`（命令一览字符串，约 350 字节）；agent 需要结构化明细（usage/参数/必填/示例/nextStep）时用 `shadow-dev help --full`。`shadow-dev help <命令>` 查看单组详情，恒定结构化（组面小）。stderr 中文命令表不受 `--full` 影响。
 
 ## 平台兼容
