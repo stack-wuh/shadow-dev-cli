@@ -2,14 +2,17 @@
 # install-cli.sh — shadow-dev CLI 的拉取/更新/回滚安装器（供 shadow-dev-workflow 插件钩子与人工共用）
 #
 # 接缝契约（与 README「安装与分发」同源）：
-#   commands: install | update(=install) | rollback | status
+#   commands: install | update(=install) | rollback | status | link <path> | unlink
 #   options : --channel release|main  --version vA.B.C  --from <tarball|dir>
 #             --prefix DIR(~/.local/share/shadow-dev-cli)  --bin DIR(~/.local/bin)
 #             --force  --dry-run  --json(单行机器输出)
-#   exit    : 0 成功/已最新 | 1 参数或冲突 | 2 网络/API | 3 产物自校验失败
+#   exit    : 0 成功/已最新 | 1 参数或冲突 | 2 网络/API | 3 产物/目标自校验失败
 #   布局    : $PREFIX/shadow-dev-cli-<ver>/{cli.mjs,lib,...}；CURRENT/PREVIOUS 为版本指针文本文件；
-#             $BIN/shadow-dev(.cmd) 为托管 shim（头标 managed-by，运行时读 CURRENT → 更新不动 shim）
-#   信任边界: HTTPS + GitHub 仓库；发布前自校验（node cli.mjs help --json 断言 ok）失败则指针不动
+#             $PREFIX/LINK 为开发直通指针（存在即 shim 最高优先，指向含 cli.mjs 的仓库目录绝对路径）；
+#             $BIN/shadow-dev(.cmd) 为托管 shim（头标 managed-by，运行时 LINK→CURRENT 两段解析 → 更新不动 shim）
+#   双轨语义: release 轨（插件钩子/物化/回滚）与 link 轨（装一次、代码即改即生效）互不覆盖；unlink 回 release 轨
+#   信任边界: release 轨 HTTPS + GitHub 仓库；link 轨目标为用户显式给出的本机目录，落指针前同样冒烟；
+#             发布前自校验（node cli.mjs help --json 断言 ok）失败则指针不动
 set -euo pipefail
 
 REPO_SLUG="stack-wuh/shadow-dev-cli"
@@ -17,7 +20,7 @@ API="https://api.github.com/repos/$REPO_SLUG"
 WEB="https://github.com/$REPO_SLUG"
 MARK="managed-by: shadow-dev-cli-installer"
 
-CMD="install"; CHANNEL="release"; VERSION=""; FROM=""; FORCE=0; DRY=0; JSON=0
+CMD="install"; CHANNEL="release"; VERSION=""; FROM=""; LINK_TARGET=""; FORCE=0; DRY=0; JSON=0
 PREFIX="${SD_PREFIX:-$HOME/.local/share/shadow-dev-cli}"
 BIN="${SD_BIN:-$HOME/.local/bin}"
 
@@ -31,7 +34,7 @@ die() { # die <exit> <error> <message>
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    install|update|rollback|status) CMD="$1"; shift
+    install|update|rollback|status|link|unlink) CMD="$1"; shift
     ;;
     --channel) [ $# -ge 2 ] || die 1 usage "--channel needs release|main"; CHANNEL="$2"; shift 2
     ;;
@@ -46,7 +49,7 @@ while [ $# -gt 0 ]; do
     --force) FORCE=1; shift ;;
     --dry-run) DRY=1; shift ;;
     --json) JSON=1; shift ;;
-    *) die 1 usage "unknown argument: $1" ;;
+    *) if [ "$CMD" = link ] && [ -z "$LINK_TARGET" ]; then LINK_TARGET="$1"; shift; else die 1 usage "unknown argument: $1"; fi ;;
   esac
 done
 
@@ -70,6 +73,47 @@ DL() { # DL <url> <out>：curl 优先，wget 兜底，带可选 token
 }
 verof() { node -pe "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).version" "$1/package.json"; }
 
+# ---- 托管 shim：运行时 LINK→CURRENT 两段解析；任何更新/切换都不动 shim 文件 ----
+shim_guard() {
+  for f in "$BIN/shadow-dev" "$BIN/shadow-dev.cmd"; do
+    [ -e "$f" ] || continue
+    grep -q "$MARK" "$f" 2>/dev/null || die 1 unmanaged-shim "unmanaged file occupies shim path: $f — rename it or pass --bin elsewhere (never overwriting silently)"
+  done
+}
+gen_shims() {
+  mkdir -p "$BIN"
+  {
+    echo '#!/bin/sh'
+    echo "# $MARK v2 — generated file, regenerate via install-cli.sh, do not edit"
+    echo "root='$PREFIX'"
+    echo 'if [ -f "$root/LINK" ]; then exec node "$(cat "$root/LINK")/cli.mjs" "$@"; fi'
+    echo "v=\$(cat \"\$root/CURRENT\" 2>/dev/null)"
+    echo "if [ -z \"\$v\" ]; then echo 'shadow-dev: not installed — run install-cli.sh install' >&2; exit 1; fi"
+    echo "exec node \"\$root/shadow-dev-cli-\$v/cli.mjs\" \"\$@\""
+  } > "$BIN/shadow-dev"
+  chmod +x "$BIN/shadow-dev"
+  case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*)
+      WINROOT="$PREFIX"
+      if command -v cygpath >/dev/null; then WINROOT="$(cygpath -w "$PREFIX")"; fi
+      {
+        echo '@echo off'
+        echo "rem $MARK v2 — generated file, regenerate via install-cli.sh, do not edit"
+        echo "set \"ROOT=$WINROOT\""
+        echo 'set "L="'
+        echo 'if exist "%ROOT%\LINK" set /p L=<"%ROOT%\LINK"'
+        echo 'if not defined L goto materialized'
+        echo 'node "%L%\cli.mjs" %*'
+        echo 'exit /b %errorlevel%'
+        echo ':materialized'
+        echo 'set /p V=<"%ROOT%\CURRENT"'
+        echo 'if "%V%"=="" (echo shadow-dev: not installed 1>&2 & exit /b 1)'
+        echo 'node "%ROOT%\shadow-dev-cli-%V%\cli.mjs" %*'
+      } > "$BIN/shadow-dev.cmd"
+    ;;
+  esac
+}
+
 # ---- 锁（陈旧>10min 自动接管）----
 LOCK="$PREFIX/.lock"
 mkdir -p "$PREFIX"
@@ -91,8 +135,33 @@ if [ "$CMD" = rollback ]; then
 fi
 if [ "$CMD" = status ]; then
   PRV="$(cat "$PREFIX/PREVIOUS" 2>/dev/null || true)"
-  json "{\"ok\":true,\"current\":\"${CUR:-null}\",\"previous\":\"${PRV:-null}\"}"
-  log "current=${CUR:-<none>} previous=${PRV:-<none>}"
+  LNK="$(cat "$PREFIX/LINK" 2>/dev/null || true)"
+  json "{\"ok\":true,\"current\":\"${CUR:-null}\",\"previous\":\"${PRV:-null}\",\"linked\":\"$(printf '%s' "${LNK:-null}" | sed 's/\\/\\\\/g')\"}"
+  log "current=${CUR:-<none>} previous=${PRV:-<none>} linked=${LNK:-<none>}"
+  exit 0
+fi
+
+# ---- link 轨：shim 一次性映射到含 cli.mjs 的仓库目录，代码即改即生效；不触网 ----
+if [ "$CMD" = link ]; then
+  [ -n "$LINK_TARGET" ] || die 1 usage "link needs <path>"
+  [ -d "$LINK_TARGET" ] || die 1 bad-target "link target is not a directory: $LINK_TARGET"
+  { [ -f "$LINK_TARGET/cli.mjs" ] && [ -f "$LINK_TARGET/package.json" ]; } || die 3 artifact "link target lacks cli.mjs/package.json: $LINK_TARGET"
+  node "$LINK_TARGET/cli.mjs" help --json 2>/dev/null | grep -q '"ok":true' || die 3 selfcheck "link target failed 'help --json' smoke test"
+  LINKV="$LINK_TARGET"
+  if command -v cygpath >/dev/null; then LINKV="$(cygpath -w "$LINK_TARGET")"; fi
+  shim_guard
+  printf '%s\n' "$LINKV" > "$PREFIX/LINK"
+  gen_shims
+  "$BIN/shadow-dev" help 2>/dev/null | grep -q '"ok":true' || die 3 selfcheck "linked shim failed smoke test"
+  json "{\"ok\":true,\"action\":\"link\",\"linked\":\"$(printf '%s' "$LINKV" | sed 's/\\/\\\\/g')\",\"shim\":\"$(printf '%s' "$BIN/shadow-dev" | sed 's/\\/\\\\/g')\"}"
+  log "shadow-dev linked to $LINKV (takes priority over the release track; run unlink to restore)"
+  exit 0
+fi
+if [ "$CMD" = unlink ]; then
+  [ -f "$PREFIX/LINK" ] || die 1 no-link "no LINK pointer to remove (not linked)"
+  rm -f "$PREFIX/LINK"
+  json '{"ok":true,"action":"unlink"}'
+  log "unlinked; shims fall back to the release track (CURRENT)"
   exit 0
 fi
 
@@ -141,12 +210,6 @@ if [ "$CUR" = "$VER" ] && [ -d "$PREFIX/shadow-dev-cli-$VER" ] && [ "$FORCE" -eq
 fi
 
 # ---- 冲突保护：非托管同名 shim 在任何写盘前失败退出 ----
-shim_guard() {
-  for f in "$BIN/shadow-dev" "$BIN/shadow-dev.cmd"; do
-    [ -e "$f" ] || continue
-    grep -q "$MARK" "$f" 2>/dev/null || die 1 unmanaged-shim "unmanaged file occupies shim path: $f — rename it or pass --bin elsewhere (never overwriting silently)"
-  done
-}
 shim_guard
 if [ "$DRY" -eq 1 ]; then
   json "{\"ok\":true,\"action\":\"dry-run\",\"version\":\"$VER\",\"current\":\"${CUR:-null}\",\"prefix\":\"$PREFIX/shadow-dev-cli-$VER\"}"
@@ -172,31 +235,8 @@ for d in "$PREFIX"/shadow-dev-cli-*; do
   rm -rf "$d"
 done
 
-# ---- 托管 shim：运行时读 CURRENT，更新不再动 shim 文件 ----
-mkdir -p "$BIN"
-{
-  echo '#!/bin/sh'
-  echo "# $MARK v1 — generated file, regenerate via install-cli.sh, do not edit"
-  echo "root='$PREFIX'"
-  echo "v=\$(cat \"\$root/CURRENT\" 2>/dev/null)"
-  echo "if [ -z \"\$v\" ]; then echo 'shadow-dev: not installed — run install-cli.sh install' >&2; exit 1; fi"
-  echo "exec node \"\$root/shadow-dev-cli-\$v/cli.mjs\" \"\$@\""
-} > "$BIN/shadow-dev"
-chmod +x "$BIN/shadow-dev"
-case "$(uname -s 2>/dev/null)" in
-  MINGW*|MSYS*|CYGWIN*)
-    WINROOT="$PREFIX"
-    command -v cygpath >/dev/null && WINROOT="$(cygpath -w "$PREFIX")"
-    {
-      echo '@echo off'
-      echo "rem $MARK v1 — generated file, regenerate via install-cli.sh, do not edit"
-      echo "set \"ROOT=$WINROOT\""
-      echo 'set /p V=<"%ROOT%\CURRENT"'
-      echo 'if "%V%"=="" (echo shadow-dev: not installed 1>&2 & exit /b 1)'
-      echo 'node "%ROOT%\shadow-dev-cli-%V%\cli.mjs" %*'
-    } > "$BIN/shadow-dev.cmd"
-  ;;
-esac
+# ---- 托管 shim：LINK→CURRENT 两段解析（生成逻辑与 link 共用）----
+gen_shims
 
 # ---- 安装后冒烟 + PATH 提示 ----
 "$BIN/shadow-dev" help 2>/dev/null | grep -q '"ok":true' || die 3 selfcheck "installed shim failed smoke test"
