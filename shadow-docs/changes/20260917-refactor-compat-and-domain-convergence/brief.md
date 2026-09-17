@@ -34,13 +34,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "e23e0a82417b84c9a52a32a22ded61cb60a03b89",
-    "verifiedAt": "2026-09-17T02:42:43.835Z"
+    "verifiedCommit": "b5350b4b3d03758615241138f6c6a4ed41a8d99d",
+    "verifiedAt": "2026-09-17T02:52:37.604Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "e23e0a82417b84c9a52a32a22ded61cb60a03b89",
-    "planHash": "22852f65a368780a83ff718ed7aec1cc1bb48c867f384918841ad3559f05e854",
+    "checkpoint": "b5350b4b3d03758615241138f6c6a4ed41a8d99d",
+    "planHash": "5651a9f270dc6328ab5439405896b18a180a7ebbdfd40981d7e09cb1d3c216a2",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
