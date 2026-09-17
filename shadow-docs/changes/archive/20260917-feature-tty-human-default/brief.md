@@ -4,7 +4,7 @@
   "name": "20260917-feature-tty-human-default",
   "type": "feature",
   "scope": "cli.mjs,lib",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-tty-human-default",
   "files": [
@@ -20,18 +20,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 9,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/9",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 10,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/10"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "7fe26cf427bff1d2bc8714b3167ff3f02e3a7586",
-    "verifiedAt": "2026-09-17T08:34:24.447Z"
+    "verifiedCommit": "2eeef1262a8549cebb0e8cb01e5a63a85d94f162",
+    "verifiedAt": "2026-09-17T08:35:56.528Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "7fe26cf427bff1d2bc8714b3167ff3f02e3a7586",
-    "planHash": "8b02b8b9a2e61b416b26fd0ee4b46dbbb3852fcd2282b42b33bd0f167ee8bf2c",
+    "checkpoint": "merged-pr:10",
+    "planHash": "321bc52df36c5e08d237d26a53959e9adb4d2a7d0c03fd8aa20c5a98f417b965",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
