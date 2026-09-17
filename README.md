@@ -9,7 +9,7 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 | 命令 | 说明 |
 |------|------|
 | `repo inspect` | 查看仓库状态（分支、HEAD、脏文件） |
-| `change create\|approve\|list` | 创建/批准变更 brief；列出活动变更 |
+| `change create\|approve\|list` | 创建/批准变更 brief；`list` 默认只列活动变更，`--all` 合并归档、`--archived` 只列归档（条目带 `archived` 布尔） |
 | `issue plan\|execute` | 创建 GitHub issue |
 | `branch plan\|execute` | 建功能分支 |
 | `sync plan\|execute` | fast-forward 同步上游 |
@@ -79,7 +79,7 @@ bash scripts/install-cli.sh install --from dist/shadow-dev-cli-v1.1.0.tar.gz  # 
 ## 开发
 
 ```bash
-npm test   # node --test，49 项 CLI 契约 + 6 项安装器契约（离线产物全链、冲突保护、回滚、自校验）
+npm test   # node --test，52 项 CLI 契约 + 6 项安装器契约（离线产物全链、冲突保护、回滚、自校验）
 ```
 
 行为契约：命令、JSON 输出结构、错误码、planHash 机制保持稳定；`test/cli.test.mjs` 是唯一契约规格。
