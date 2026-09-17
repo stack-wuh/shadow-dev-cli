@@ -53,9 +53,10 @@ async function planDomain(c, mod, r, o) {
   return e
 }
 
-function helpEnvelope(p) {
+// 概览默认最小面（data.help 恒字符串）；结构化目录经 --full opt-in；组详情恒定返回该组 commands
+function helpEnvelope(p, o) {
   const g = p[1]
-  if (!g) return { ok: true, command: 'help', data: { help: HELP, commands: COMMANDS } }
+  if (!g) return { ok: true, command: 'help', data: o.full ? { help: HELP, commands: COMMANDS } : { help: HELP } }
   const commands = Object.fromEntries(Object.entries(COMMANDS).filter(([k]) => k === g || k.startsWith(g + '.')))
   if (!Object.keys(commands).length) throw err('UNKNOWN_COMMAND', `unsupported command: help ${g}`)
   return { ok: true, command: `help.${g}`, data: { help: Object.values(commands).map(e => e.usage).join('\n'), commands } }
@@ -88,7 +89,7 @@ try {
   const t0 = Date.now()
   let v
   if (helpMode) {
-    v = helpEnvelope(p)
+    v = helpEnvelope(p, o)
     human.printHelp(L, v)
   } else {
     human.enter(L, p)

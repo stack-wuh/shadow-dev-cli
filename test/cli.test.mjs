@@ -232,14 +232,19 @@ test('mutating results carry a stable untranslated nextStep in JSON', () => {
   assert.match(en.stderr, /next/i)
 })
 
-test('help is structured: legacy string kept, per-command detail, language-invariant stdout', () => {
+test('help defaults to a compact summary; --full adds the structured catalog', () => {
   const overview = run(['help', '--lang', 'zh'])
   const data = JSON.parse(overview.stdout).data
+  assert.equal(typeof data.help, 'string')
   assert.match(data.help, /repo inspect/)
-  assert.equal(data.commands['branch.execute'].usage, 'branch execute')
-  assert.deepEqual(Object.keys(data.commands['change.create'].summary).sort(), ['en', 'zh'])
-  const detail = run(['help', 'branch'])
-  assert.equal(JSON.parse(detail.stdout).command, 'help.branch')
+  assert.equal(data.commands, undefined, 'default overview must not embed the full catalog')
+  assert.ok(overview.stdout.length < 1024, 'compact overview stdout stays small')
+  const full = JSON.parse(run(['help', '--full', '--lang', 'zh']).stdout).data
+  assert.equal(full.commands['branch.execute'].usage, 'branch execute')
+  assert.deepEqual(Object.keys(full.commands['change.create'].summary).sort(), ['en', 'zh'])
+  const detail = JSON.parse(run(['help', 'branch']).stdout)
+  assert.equal(detail.command, 'help.branch')
+  assert.ok(detail.data.commands['branch.plan'])
   assert.equal(overview.stdout, run(['help', '--lang', 'en']).stdout)
 })
 
