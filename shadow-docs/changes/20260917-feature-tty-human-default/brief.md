@@ -4,7 +4,7 @@
   "name": "20260917-feature-tty-human-default",
   "type": "feature",
   "scope": "cli.mjs,lib",
-  "status": "branched",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-tty-human-default",
   "files": [
@@ -24,14 +24,14 @@
     "pullRequestUrl": null
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "7fe26cf427bff1d2bc8714b3167ff3f02e3a7586",
+    "verifiedAt": "2026-09-17T08:34:24.447Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:9",
-    "planHash": "74249a0f2a800fd21bea4037c19a176941a338e5657e613eea01052f8587beda",
+    "checkpoint": "7fe26cf427bff1d2bc8714b3167ff3f02e3a7586",
+    "planHash": "8b02b8b9a2e61b416b26fd0ee4b46dbbb3852fcd2282b42b33bd0f167ee8bf2c",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -41,6 +41,11 @@
         "feature"
       ]
     }
+  },
+  "knowledge": {
+    "action": "更新",
+    "target": "shadow-docs/knowledge/cli-output-contract.md",
+    "reason": "stdout 恒 JSON 条款修订为按环境路由（管道默认/TTY 显式），TTY 抑制时退出码与 planHash 透出为新增约束"
   }
 }
 ---
