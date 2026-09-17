@@ -4,7 +4,7 @@
   "name": "20260917-refactor-compat-and-domain-convergence",
   "type": "refactor",
   "scope": "lib",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "refactor/20260917-refactor-compat-and-domain-convergence",
   "files": [
@@ -29,18 +29,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 1,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/1",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 3,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/3"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "b5350b4b3d03758615241138f6c6a4ed41a8d99d",
-    "verifiedAt": "2026-09-17T02:52:37.604Z"
+    "verifiedCommit": "2064a3127ddfb97bc182348c41aa331be12fe5fe",
+    "verifiedAt": "2026-09-17T02:58:18.835Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "b5350b4b3d03758615241138f6c6a4ed41a8d99d",
-    "planHash": "5651a9f270dc6328ab5439405896b18a180a7ebbdfd40981d7e09cb1d3c216a2",
+    "checkpoint": "merged-pr:3",
+    "planHash": "6bb6d5268a744f21dc8cd51227eb930fa6fe0c322df50d9c3afaf6ba4f343abf",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
