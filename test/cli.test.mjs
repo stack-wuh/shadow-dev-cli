@@ -187,6 +187,24 @@ test('file lists normalize Windows backslash separators', () => {
   assert.deepEqual(JSON.parse(conflict.stdout).data.overlaps, [{ change: 'backslash', files: ['src/example.js'] }])
 })
 
+test('plan to execute survives the clean-tree write of planHash', () => {
+  const root = fixture()
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  const planned = run(['branch', 'plan', '--name', 'sample', '--json'], root)
+  assert.equal(planned.status, 0, planned.stderr)
+  const result = run(['branch', 'execute', '--name', 'sample', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root)
+  assert.equal(result.status, 0, JSON.parse(result.stdout).error?.message)
+})
+
+test('porcelain first-line status keeps the full path in changed files', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'README.md'), '# changed\n')
+  const result = run(['repo', 'inspect', '--json'], root)
+  assert.equal(result.status, 0, result.stderr)
+  assert.ok(JSON.parse(result.stdout).data.changedFiles.includes('README.md'))
+})
+
 test('human layer: banners and hints on stderr, stdout contract language-invariant', () => {
   const root = fixture()
   const zh = run(['task', 'list', '--name', 'sample', '--lang', 'zh'], root)

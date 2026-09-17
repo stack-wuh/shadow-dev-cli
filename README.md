@@ -1,6 +1,6 @@
 # shadow-dev-cli
 
-Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute 两段式：`plan` 输出 planHash 并持久化进 brief，`execute` 必须携带确认与匹配的 planHash 才会落盘或调用外部系统，杜绝不可复现的隐式变更。
+Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute 两段式：`plan` 输出 planHash 并持久化进 brief，`execute` 必须携带确认与匹配的 planHash 才会落盘或调用外部系统，杜绝不可复现的隐式变更。planHash 覆盖命令的语义输入，但剥离 plan 自身的副作用（写回 brief 的凭证字段、易变 worktree 快照 `changedFiles`/`clean`）——干净树上 plan→execute 同样可复现。
 
 纯 Node.js（>=20）、零 npm 依赖、单命令入口 `shadow-dev`。
 
@@ -64,7 +64,7 @@ stdout 的 JSON 契约之外，CLI 在 stderr 渲染一层人类提示：进场�
 ## 开发
 
 ```bash
-npm test   # node --test，45 个契约测试覆盖全部命令域与 stderr 人用层
+npm test   # node --test，47 个契约测试覆盖全部命令域、stderr 人用层与凭证链
 ```
 
 行为契约：命令、JSON 输出结构、错误码、planHash 机制保持稳定；`test/cli.test.mjs` 是唯一契约规格。
