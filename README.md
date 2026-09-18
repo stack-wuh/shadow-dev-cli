@@ -8,6 +8,7 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 
 | 命令 | 说明 |
 |------|------|
+| `version` | CLI 版本（任意目录可用，不要求 git 仓库） |
 | `repo inspect` | 查看仓库状态（分支、HEAD、脏文件） |
 | `change create\|approve\|list` | 创建/批准变更 brief；`list` 默认只列活动变更，`--all` 合并归档、`--archived` 只列归档（条目带 `archived` 布尔） |
 | `issue plan\|execute` | 创建 GitHub issue（正文由 brief 确定性渲染，见「Issue 正文结构契约」） |

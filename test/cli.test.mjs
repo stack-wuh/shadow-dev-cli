@@ -111,6 +111,31 @@ test('help lists deterministic workflow commands', () => {
   assert.match(result.stdout, /archive plan\|execute/)
 })
 
+test('version returns the package version without a git repository', () => {
+  const expected = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
+  const outside = run(['version', '--json'], tmpdir())
+  assert.equal(outside.status, 0, outside.stderr)
+  const o = JSON.parse(outside.stdout)
+  assert.equal(o.ok, true)
+  assert.equal(o.command, 'version')
+  assert.equal(o.data.version, expected)
+  // 仓库内同样可用
+  const root = fixture()
+  assert.equal(JSON.parse(run(['version', '--json'], root).stdout).data.version, expected)
+  // --version 别名与 help 目录行
+  assert.equal(JSON.parse(run(['--version', '--json'], tmpdir()).stdout).data.version, expected)
+  assert.match(JSON.parse(run(['--help']).stdout).data.help, /^version\n/)
+  assert.match(JSON.parse(run(['help', 'version', '--json']).stdout).data.commands.version.usage, /^version$/)
+})
+
+test('version stdout is language-invariant while human line localizes', () => {
+  const zh = run(['version', '--json', '--lang', 'zh'], tmpdir())
+  const en = run(['version', '--json', '--lang', 'en'], tmpdir())
+  assert.equal(JSON.stringify(JSON.parse(zh.stdout)), JSON.stringify(JSON.parse(en.stdout)))
+  assert.match(zh.stderr, /版本/)
+  assert.match(en.stderr, /version/)
+})
+
 test('unknown commands return a stable JSON error', () => {
   const result = run(['unknown', '--json'])
   assert.equal(result.status, 1)

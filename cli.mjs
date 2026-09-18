@@ -8,6 +8,7 @@ import { confirm, name } from './lib/input.mjs'
 import { err } from './lib/errors.mjs'
 import { resolveLang } from './lib/i18n.mjs'
 import { HELP, COMMANDS } from './lib/commands.mjs'
+import { VERSION } from './lib/version.mjs'
 import * as human from './lib/human.mjs'
 import * as branch from './lib/domains/branch.mjs'
 import * as sync from './lib/domains/sync.mjs'
@@ -89,9 +90,14 @@ try {
   p = parsed.p; o = parsed.o
   L = resolveLang(o)
   const helpMode = !p.length || p.includes('--help') || p[0] === 'help'
+  // 元命令 version 与 help 同类：不要求 git 仓库，在 root() 之前拦截；--version 先于 help 判定
+  const versionMode = p[0] === 'version' && p.length === 1 || ('version' in o && !p.length)
   const t0 = Date.now()
   let v
-  if (helpMode) {
+  if (versionMode) {
+    v = { ok: true, command: 'version', data: { version: VERSION } }
+    human.printVersion(L, VERSION)
+  } else if (helpMode) {
     v = helpEnvelope(p, o)
     human.printHelp(L, v)
   } else {
