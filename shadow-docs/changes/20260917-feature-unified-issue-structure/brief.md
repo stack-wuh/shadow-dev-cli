@@ -31,7 +31,7 @@
   "workflow": {
     "operation": null,
     "checkpoint": "issue:19",
-    "planHash": "04b25e73d2a3a5c21d96f3ee6f069833e8678421eb3ead957f9d558d499c6702",
+    "planHash": "3047dc73a05feba0ee43365232767e98e52792f6a8066dbfcbdb6335aa4f77d0",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -88,8 +88,8 @@
 - [x] README 增加 issue 结构契约节（双通道说明 + metadata 字段表 + 示例） — `README.md`
 
 ## 结果
-- 实际耗时: —
-- 验证: —
+- 实际耗时: 约 2.5h（propose→review 当晚完成；跨 3 个并行会话错峰等待约 1 天）
+- 验证: TDD 红灯先行确认（模块缺失+3 处契约差异）后全绿；ship worktree 合并态（origin/main@8140eff 基底）`npm test` exit=0（55 CLI + 6 installer）；dogfood 实测 issue.plan stdout 641B（旧 7564B，-92%）；POST 快照 sha 与 plan 摘要逐字节一致由 e2e 钉住。PR #24 merged（10ba1f8）；发布线上 v1.2.0 tag 目标（97f07e9）含本契约（bf5dc16 祖先链验证通过）
 
 ## 知识评估
 - **预期影响:** 新增 + 更新
@@ -98,3 +98,5 @@
 
 ## 协调注意
 当前工作区存在并行会话 20260917-feature-change-list-archived（未提交，dirty 文件与本变更声明的 README.md/lib/commands.mjs/test/cli.test.mjs 重叠）。apply 前须等其合入或改用独立 worktree，commit 时只 add 本变更文件。
+
+实际经过（2026-09-18 复盘）：先后出现 change-list-archived、install-link-mode、installer-ci-cmd-assert、cli-version 四个并行会话共写本 worktree；等待期凭证链两次拦截漂移（PLAN_HASH_INVALID 按设计生效）。发布阶段用 `git worktree add`（ship/20260917-unified-issue）cherry-pick 出纯净基底后 publish，避免把他人未合并提交带进 PR #24——此「ship worktree」模式应作为共享 checkout 并行的标准应对沉淀为知识。
