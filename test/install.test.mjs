@@ -29,7 +29,9 @@ function makeTarball(version) {
   writeFileSync(join(app, 'package.json'), JSON.stringify({ name: 'shadow-dev-cli', version }))
   writeFileSync(join(app, 'README.md'), '# fake artifact\n')
   const tgz = join(dir, `shadow-dev-cli-v${version}.tar.gz`)
-  const r = spawnSync('tar', ['-czf', toUnix(tgz), '-C', toUnix(dir), 'shadow-dev-cli'], { encoding: 'utf8' })
+  // tar 必须在 bash 内执行：Windows runner 上 node 直 spawn 绑到 System32 bsdtar，读不了 MSYS 路径；
+  // bash -c 让测试与 install-cli.sh 本体走同一解析路径（Windows 命中 git 的 GNU tar）
+  const r = spawnSync('bash', ['-c', 'tar -czf "$0" -C "$1" shadow-dev-cli', toUnix(tgz), toUnix(dir)], { encoding: 'utf8' })
   assert.equal(r.status, 0, r.stderr)
   return tgz
 }
@@ -100,7 +102,7 @@ test('artifact without cli.mjs fails selfcheck and leaves pointer untouched', sk
   writeFileSync(join(dir, 'shadow-dev-cli', 'package.json'), '{"name":"shadow-dev-cli","version":"0.0.1"}')
   writeFileSync(join(dir, 'shadow-dev-cli', 'README.md'), '# nope\n')
   const tgz = join(dir, 'bad.tar.gz')
-  spawnSync('tar', ['-czf', toUnix(tgz), '-C', toUnix(dir), 'shadow-dev-cli'])
+  spawnSync('bash', ['-c', 'tar -czf "$0" -C "$1" shadow-dev-cli', toUnix(tgz), toUnix(dir)])
   const r = run(['install', '--from', toUnix(tgz), '--prefix', toUnix(prefix), '--bin', toUnix(bin)])
   assert.equal(r.status, 3)
   assert.ok(!existsSync(join(prefix, 'CURRENT')))
