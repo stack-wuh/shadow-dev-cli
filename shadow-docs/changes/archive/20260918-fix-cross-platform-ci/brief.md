@@ -80,8 +80,11 @@ main 的 CI 矩阵在 macos/windows 仍有两簇恒红（ubuntu 已由 #23 转�
 
 ## 结果
 
-- 实际耗时: —
-- 验证: —
+- 实际耗时: 约 20 分钟
+- 验证: 权威验证达成——PR #26 的 CI **9 格矩阵（ubuntu/macos/windows × node 20/22/24）首次全绿**（run 35299671748）；本地 `SHADOW_DEV_LANG=en` 强制下用例 20 转绿证明 locale 依赖根除；安装器 8 用例 bash-tar 全绿。合并 `ab9d2b6`，归档 `29fb4f5`。
+- 扩展记录: task-2 只声明 makeTarball，实际同类直调 `spawnSync('tar')` 在坏产物用例还有一处（同一根因，一次修全）。
+- 知识落点: `cli-output-contract.md` 追加"测试断言 stderr 文案必须显式钉语言，禁止依赖 runner locale"；`install-distribution.md` 追加"测试打包 tar 必须经 bash 解析（与安装器同一路径）"。
+- 后续观察: `scripts/pack.mjs` 也直 spawn tar，仅维护者本机执行不进 CI，暂不改；维护环境若换 Windows runner 需按同一约束处理。
 
 ## 知识评估
 
