@@ -4,7 +4,7 @@
   "name": "20260918-fix-cross-platform-ci",
   "type": "fix",
   "scope": null,
-  "status": "branched",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20260918-fix-cross-platform-ci",
   "files": [],
@@ -12,18 +12,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 25,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/25",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 26,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/26"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "29a8844ef29d97bd585f5a83c6d01c809a40b419",
+    "verifiedAt": "2026-09-18T02:33:30.110Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:25",
-    "planHash": "4c33e17d13906ff50b9ef77b99c83e4f21491bc1d7ba48c1088a641850138e22",
+    "checkpoint": "merged-pr:26",
+    "planHash": "ebf10504db37f2c755cbcf2c9127b34b66557bec69b1564f6195a3c57fe888cd",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -35,6 +35,11 @@
         "fix"
       ]
     }
+  },
+  "knowledge": {
+    "action": "更新",
+    "target": "shadow-docs/knowledge/cli-output-contract.md",
+    "reason": "语言链约束追加测试侧 locale 显式钉定条款；install-distribution 卡片同批追加 tar-via-bash 可移植性约束（两卡片均已随本变更更新）"
   }
 }
 ---
@@ -71,7 +76,7 @@ main 的 CI 矩阵在 macos/windows 仍有两簇恒红（ubuntu 已由 #23 转�
 
 ### Phase 2
 
-- [ ] task-3 — PR 上 CI 9 格矩阵（ubuntu/macos/windows × 20/22/24）全绿作为权威验证；失败则在同一调查上下文内修到绿
+- [x] task-3 — PR 上 CI 9 格矩阵（ubuntu/macos/windows × 20/22/24）全绿作为权威验证；失败则在同一调查上下文内修到绿
 
 ## 结果
 
