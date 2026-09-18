@@ -4,7 +4,7 @@
   "name": "20260917-feature-install-link-mode",
   "type": "feature",
   "scope": "scripts/install-cli.sh",
-  "status": "branched",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-install-link-mode",
   "files": [],
@@ -12,18 +12,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 20,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/20",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 21,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/21"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "9c7d0cec70212adac472cee5da20150fc55d40ce",
+    "verifiedAt": "2026-09-17T13:47:08.943Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:20",
-    "planHash": "be18f297a3af19ccd6be47a0f8f2e15d38815773a58b477b7222feed9baee39d",
+    "checkpoint": "merged-pr:21",
+    "planHash": "9f0e43164afe0ff05c123683283f7a74bb1c9238339395147327012c1db591b1",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -35,6 +35,11 @@
         "feature"
       ]
     }
+  },
+  "knowledge": {
+    "action": "新增",
+    "target": "shadow-docs/knowledge/install-distribution.md",
+    "reason": "安装/分发域首次沉淀为卡片：双轨指针模型、shim 托管协议、写盘前置校验与跨仓接缝契约（knowledge 查询确认该域原无任何 active 卡片）"
   }
 }
 ---
@@ -79,8 +84,10 @@
 
 ## 结果
 
-- 实际耗时: —
-- 验证: —
+- 实际耗时: 约 50 分钟（含并发串扰处置）
+- 验证: 安装器契约 8/8 全绿（新增 2 个 link 用例）；本机 `link D:/works/shadow-dev-cli` 后托管 shim `shadow-dev change list --archived` 立即返回 9 条（v1.1.0 release 无此命令），`status --json` 如实输出 `{"current":"1.1.0","linked":"D:\\works\\shadow-dev-cli"}`，release 轨未被覆盖。
+- 偏差记录: ①task-3 的 README 编辑因与并发会话（20260917-feature-unified-issue-structure）在同一文件交叉，未随 PR #21 提交（编辑留存工作区待其变更落地，知识卡片已完整承载双轨语义）；②"改一行代码即时生效"未做侵入式演示（工作区含他人在途文件，不动其现场），以架构证据替代——shim exec 直指仓库工作树 cli.mjs，无拷贝环节；③push 时发现本会话创建的分支 ref 被并发会话删除（其分支从本变更 commit 拉出），本地重建 ref 后无损推送。
+- 附带发现: `test/install.test.mjs:56` 的 `.cmd` 存在断言在 Linux CI 恒假——自 38b1364 起 main 分支 CI 持续红色，属本域历史缺陷，另立 fix 变更处理（连同 README link 说明补交）。
 
 ## 知识评估
 
