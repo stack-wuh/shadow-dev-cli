@@ -4,7 +4,7 @@
   "name": "20260917-feature-unified-issue-structure",
   "type": "feature",
   "scope": "lib/domains/issue.mjs,lib/issue-render.mjs,lib/commands.mjs",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260917-feature-unified-issue-structure",
   "files": [
@@ -20,18 +20,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 19,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/19",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 24,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/24"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "43e37ba27823f535a8087e0dddc9bc6ab73082c7",
-    "verifiedAt": "2026-09-17T13:29:34.011Z"
+    "verifiedCommit": "e1407de00cab14e8501aa14ac411d1af26d1b648",
+    "verifiedAt": "2026-09-18T09:57:12.755Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:19",
-    "planHash": "3047dc73a05feba0ee43365232767e98e52792f6a8066dbfcbdb6335aa4f77d0",
+    "checkpoint": "merged-pr:24",
+    "planHash": "7bc914d795a60d409304d2f70fa0aead80a282b7eeb124f80f157ef8fa95cbea",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -47,7 +47,7 @@
   "knowledge": {
     "action": "新增",
     "target": "shadow-docs/knowledge/issue-body-contract.md",
-    "reason": "issue 正文成为 CLI 与外部消费者（插件、x.wuh.site 类站点）间的稳定数据契约：分节骨架+metadata 机器通道+stdout 最小投影；ship 时同步更新 cli-output-contract.md 的 present 钩子与 token 契约段"
+    "reason": "issue 正文成为 CLI 与外部消费者间的稳定数据契约（分节骨架+metadata 机器通道+最小投影）；ship 已写入卡片与 menu 路由"
   }
 }
 ---
