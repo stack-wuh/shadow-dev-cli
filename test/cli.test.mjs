@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -445,8 +446,81 @@ test('issue plan is stable and includes GitHub payload', () => {
   const second = run(args, root)
   assert.equal(first.status, 0, first.stderr)
   assert.equal(JSON.parse(first.stdout).planHash, JSON.parse(second.stdout).planHash)
-  assert.equal(JSON.parse(first.stdout).data.title, 'Feature')
+  assert.equal(JSON.parse(first.stdout).data.title, '[feat] Feature')
   assert.equal(JSON.parse(first.stdout).data.repository, 'owner/repo')
+})
+
+const sha256hex = s => createHash('sha256').update(s, 'utf8').digest('hex')
+
+test('issue renderer: deterministic skeleton, [type] prefix, supplement order and metadata channel', async () => {
+  const { renderIssueBody } = await import('../lib/issue-render.mjs')
+  const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const b = {
+    data: { name: 'n1', type: 'feature', scope: 's1', status: 'proposed', baseBranch: 'main', branch: null },
+    body: '# 标题一\r\n\r\n## 动机\r\nwhy\r\n\r\n## 任务\n- [ ] t1\n\n## 结果\ninternal only\n\n## 协调注意\ninternal only 2\n',
+  }
+  const first = renderIssueBody(b, {})
+  assert.deepEqual(renderIssueBody(b, {}), first, 'same input must render byte-identical output')
+  assert.equal(first.title, '[feature] 标题一')
+  assert.deepEqual(first.sections, ['动机', '-引用规范', '-决策', '任务'])
+  assert.ok(first.body.includes('## 动机\nwhy'), 'CRLF source must be normalized into the skeleton')
+  assert.ok(first.body.includes('（brief 缺少该节）'), 'missing whitelist section gets placeholder')
+  assert.ok(!first.body.includes('internal only'), 'non-whitelist sections are dropped')
+  const meta = JSON.parse(first.body.match(/^<!-- shadow-dev:issue-metadata (.+) -->$/m)[1])
+  assert.deepEqual(meta, { name: 'n1', type: 'feature', scope: 's1', status: 'proposed', branch: null, baseBranch: 'main', briefPath: 'shadow-docs/changes/n1/brief.md', cliVersion: version, prUrl: null, issueNumber: null })
+  assert.match(first.body.trimEnd(), /-->$/, 'metadata comment is the last line')
+  assert.equal(renderIssueBody(b, { titleRaw: '[feature] 标题一' }).title, '[feature] 标题一', 'prefix is idempotent')
+  const s = renderIssueBody(b, { titleRaw: 'custom', supplement: 'extra note' })
+  assert.equal(s.title, '[feature] custom')
+  assert.ok(s.body.includes('## 补充\nextra note'))
+  assert.ok(s.body.indexOf('## 补充') < s.body.indexOf('完整 brief：'), 'supplement sits before the brief pointer')
+})
+
+test('issue plan projects a lean summary; execute posts the rendered skeleton bound to bodySha256', () => {
+  const root = fixture()
+  execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:owner/repo.git'], { cwd: root })
+  const api = apiStub([{ method: 'POST', path: '/repos/owner/repo/issues', body: { number: 7, html_url: 'https://github.test/issues/7' } }])
+  try {
+    const planned = run(['issue', 'plan', '--name', 'sample', '--labels', 'bug', '--json'], root)
+    assert.equal(planned.status, 0, planned.stderr)
+    const v = JSON.parse(planned.stdout)
+    const d = v.data
+    for (const heavy of ['body', 'brief', 'repo', 'titleRaw', 'supplement']) assert.ok(!(heavy in d), `projection must strip ${heavy}`)
+    assert.match(d.nextStep, /^issue execute --name sample --plan-hash [0-9a-f]{64} --confirm$/)
+    assert.equal(d.title, '[feat] Sample')
+    assert.deepEqual(d.sections, ['-动机', '-引用规范', '-决策', '任务'])
+    assert.equal(d.bodyBytes, d.bodyBytes | 0)
+    const result = run(['issue', 'execute', '--name', 'sample', '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    const post = JSON.parse(api.requests()[0].body)
+    assert.equal(post.title, '[feat] Sample')
+    assert.deepEqual(post.labels, ['bug'])
+    assert.match(post.body, /^## 动机\n（brief 缺少该节）/)
+    assert.ok(post.body.includes('shadow-dev:issue-metadata'))
+    assert.equal(sha256hex(post.body), d.bodySha256, 'POSTed body must match the previewed hash')
+    assert.equal(Buffer.byteLength(post.body), d.bodyBytes)
+    const persisted = readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8')
+    assert.ok(persisted.includes('issuePlan'), 'full body persists in the brief snapshot')
+  } finally { api.close() }
+})
+
+test('issue plan drifts when the brief body changes; re-plan refreshes the render', () => {
+  const root = fixture()
+  execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:owner/repo.git'], { cwd: root })
+  const planned = run(['issue', 'plan', '--name', 'sample', '--json'], root)
+  assert.equal(planned.status, 0, planned.stderr)
+  const v1 = JSON.parse(planned.stdout)
+  const path = join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')
+  writeFileSync(path, readFileSync(path, 'utf8') + '\n## 动机\n补上的动机\n')
+  const failed = run(['issue', 'execute', '--name', 'sample', '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: 'http://127.0.0.1:1' })
+  assert.equal(failed.status, 1)
+  assert.equal(JSON.parse(failed.stdout).error.code, 'PLAN_HASH_INVALID')
+  const refreshed = run(['issue', 'plan', '--name', 'sample', '--json'], root)
+  const v2 = JSON.parse(refreshed.stdout)
+  assert.notEqual(v2.planHash, v1.planHash, 're-plan must produce a new credential')
+  assert.notEqual(v2.data.bodySha256, v1.data.bodySha256)
+  assert.ok(v2.data.sections.includes('动机'))
+  assert.ok(v2.data.sections[0] === '动机')
 })
 test('unsupported explicit add forms return code 4', () => {
   const root = fixture()

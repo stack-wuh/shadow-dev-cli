@@ -10,7 +10,8 @@ source:
   - changes/20260917-feature-tty-human-default/brief.md
   - changes/20260917-fix-missing-arg-hints/brief.md
   - changes/20260917-feature-change-list-archived/brief.md
-verified: 2026-09-17
+  - changes/20260917-feature-unified-issue-structure/brief.md
+verified: 2026-09-18
 ---
 
 # CLI 双通道输出契约
@@ -27,6 +28,7 @@ verified: 2026-09-17
 - 抑制 stdout 的分支必须仍然设置退出码；plan 的人用收场行必须透出 `planHash`（PTY 环境下的 agent 兜底）。`--json` 是跨环境逃生门，不得复用为其他语义。
 - 错误 code 与 `data.nextStep` 模板永不本地化；语言链固定为 `--lang` > `SHADOW_DEV_LANG` > locale 探测 > 默认 zh，且只影响 stderr 文案。
 - `nextStep` 为 additive 字段，写入发生在 planHash 持久化与计算之后，不得参与 hash 输入。
+- plan 域可导出 `present(x)` 声明 stdout data 的**最小投影**（`cli.mjs planDomain` 应用，缺省恒等）：重字段（全文正文、整段 brief/repo 回显）不进机器契约，语义输入仍在完整 planData 内参与 planHash。首个用户是 `issue plan`（摘要三件套 bodyBytes/bodySha256/sections，见 [issue 正文双通道结构契约](issue-body-contract.md)）；新域裁剪须有 token 依据并测试钉住。
 - help 的 `data.help` 恒为字符串（概览默认唯一字段，最小面 <1KB）；结构化目录 `data.commands` 经 `--full` opt-in；`help <命令>` 组详情恒定返回该组 `commands`。
 - 语言不变性由契约测试保护（同命令 zh/en stdout 逐字节一致），触碰输出面的变更必须保持其绿色。
 
