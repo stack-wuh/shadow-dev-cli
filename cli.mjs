@@ -43,14 +43,16 @@ async function executeDomain(c, mod, r, o) {
   return mod.execute(r, o, e.data, b)
 }
 
+// 域可导出 present(x) 声明 stdout data 的最小投影（哈希/持久化仍用完整 planData）；缺省恒等
 async function planDomain(c, mod, r, o) {
   const e = plan(c, await mod.planData(r, o))
-  if (!o.name) return e
+  const view = mod.present ? { ...e, data: mod.present(e.data) } : e
+  if (!o.name) return view
   const b = brief(r, name(o))
   b.data.workflow.planHash = e.planHash
   mod.persistPlan?.(b, e)
   write(b)
-  return e
+  return view
 }
 
 // 概览默认最小面（data.help 恒字符串）；结构化目录经 --full opt-in；组详情恒定返回该组 commands
