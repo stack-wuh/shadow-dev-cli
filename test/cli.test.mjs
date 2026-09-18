@@ -307,7 +307,8 @@ test('jsonEnabled routes the JSON surface by environment and explicit flags', as
 })
 
 test('TTY suppresses stdout JSON; --json and env restore it; planHash surfaces on stderr', () => {
-  const plain = runTty(['--help'])
+  // 中文通道断言必须显式钉语言：CI runner locale（mac/windows 为 en）经语言链探测会渲染英文，禁止隐式依赖机器环境
+  const plain = runTty(['--help'], process.cwd(), { SHADOW_DEV_LANG: 'zh' })
   assert.equal(plain.status, 0, plain.stderr)
   assert.equal(plain.stdout.trim(), '', 'interactive help must not print JSON')
   assert.match(plain.stderr, /shadow-dev 命令一览/)

@@ -9,6 +9,7 @@ source:
   - changes/20260917-fix-installer-url-taint/brief.md
   - changes/20260917-feature-install-link-mode/brief.md
   - changes/20260918-fix-installer-ci-cmd-assert/brief.md
+  - changes/20260918-fix-cross-platform-ci/brief.md
 verified: 2026-09-18
 ---
 
@@ -26,6 +27,7 @@ verified: 2026-09-18
 - `LINK` 与 `CURRENT` 语义互斥不复用：`install` 永不写/删 `LINK`，`unlink` 只删 `LINK`；status 的 `linked` 为 additive 字段。JSON 输出中的 Windows 路径必须转义反斜杠（`sed 's/\\/\\\\/g'`）。
 - Windows 上 `LINK` 落盘存 `cygpath -w` 的 Windows 形态（`.cmd` shim 用 `set /p` 直读，POSIX 形态 node 打不开）；shim `.cmd` 用 goto 两段分支而非括号块（括号块内 `%errorlevel%` 提前展开会吞掉真实退出码）。
 - 信任边界分轨表述：release 轨 HTTPS + GitHub 仓库（无独立校验和），link 轨目标是用户显式给出的本机目录——引入 link 不扩大下载面，也不得把 link 目标喂给任何网络请求。
+- 测试需要打包 tar 时**必须经 `bash -c 'tar ...'` 执行**（与安装器本体同一解析路径）：node 直接 `spawnSync('tar')` 在 Windows runner 绑到 System32 bsdtar，读不了 `toUnix()` 产出的 MSYS `/tmp` 路径，导致全部安装器用例在 windows CI 恒红。
 
 ## 适用边界
 
