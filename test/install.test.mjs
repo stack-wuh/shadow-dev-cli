@@ -53,7 +53,7 @@ test('offline install: pointer, managed shims, installed shim runs', skip, () =>
   assert.equal(readFileSync(join(prefix, 'CURRENT'), 'utf8').trim(), '9.9.9')
   const shim = readFileSync(join(bin, 'shadow-dev'), 'utf8')
   assert.match(shim, /managed-by: shadow-dev-cli-installer/)
-  assert.ok(existsSync(join(bin, 'shadow-dev.cmd')))
+  assert.equal(existsSync(join(bin, 'shadow-dev.cmd')), platform() === 'win32', '.cmd shim is generated on Windows only')
   const viaShim = spawnSync('bash', [toUnix(join(bin, 'shadow-dev')), 'help'], { encoding: 'utf8' })
   assert.equal(viaShim.status, 0, viaShim.stderr)
   assert.match(viaShim.stdout, /"ok":true/)

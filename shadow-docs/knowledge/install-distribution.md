@@ -8,7 +8,8 @@ source:
   - changes/20260917-feature-install-cli-script/brief.md
   - changes/20260917-fix-installer-url-taint/brief.md
   - changes/20260917-feature-install-link-mode/brief.md
-verified: 2026-09-17
+  - changes/20260918-fix-installer-ci-cmd-assert/brief.md
+verified: 2026-09-18
 ---
 
 # shadow-dev CLI 安装与分发模型
@@ -32,7 +33,7 @@ verified: 2026-09-17
 
 ## 验证方式
 
-`node --test test/install.test.mjs` 全绿即契约成立（8 用例：离线物化+shim 运行、幂等/--force、非托管 shim 保护、回滚往返、坏产物、link 映射/优先/回退、link 校验与 guard、dry-run+status+参数拒绝）。手工复验：`bash scripts/install-cli.sh link <本仓库>` 后 `shadow-dev change list --archived` 立即可用且 `install --json` 后仍走 link（LINK 优先）；`unlink` 后回物化版本；`status --json` 的 `linked`/`current` 如实反映。
+`node --test test/install.test.mjs` 全绿即契约成立（8 用例：离线物化+shim 运行、幂等/--force、非托管 shim 保护、回滚往返、坏产物、link 映射/优先/回退、link 校验与 guard、dry-run+status+参数拒绝）。shim 面是**平台分支**的：`.sh` 全平台生成，`.cmd` 仅 MINGW/MSYS/CYGWIN——测试断言 `.cmd` 必须带 `platform() === 'win32'` 平台门，恒真/恒假的跨平台断言会让 CI 门禁失真（历史上 main 因此连红一天）。手工复验：`bash scripts/install-cli.sh link <本仓库>` 后 `shadow-dev change list --archived` 立即可用且 `install --json` 后仍走 link（LINK 优先）；`unlink` 后回物化版本；`status --json` 的 `linked`/`current` 如实反映。
 
 ## 关联知识
 
