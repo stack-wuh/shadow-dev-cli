@@ -4,7 +4,7 @@
   "name": "20260918-feature-cli-version",
   "type": "feature",
   "scope": "cli",
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "feature/20260918-feature-cli-version",
   "files": [
@@ -22,8 +22,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 27,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/27",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 28,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/28"
   },
   "review": {
     "conclusion": "passed",
@@ -32,7 +32,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:27",
+    "checkpoint": "pr:28",
     "planHash": "e91178e0aff22b5c13aa226a7ef74bdf6e1e1797baef91d512d5c44bdb7c645c",
     "updatedAt": null,
     "lastError": null,
