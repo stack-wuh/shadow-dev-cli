@@ -4,7 +4,7 @@
   "name": "20260918-feature-cli-version",
   "type": "feature",
   "scope": "cli",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260918-feature-cli-version",
   "files": [
@@ -27,13 +27,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "c32f32ad373ae449b29d55d10e4bf655c6379bac",
-    "verifiedAt": "2026-09-18T03:40:27.336Z"
+    "verifiedCommit": "f175eeea0ec6d915198100a4914c6afadfd91abf",
+    "verifiedAt": "2026-09-18T03:44:52.028Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:28",
-    "planHash": "e91178e0aff22b5c13aa226a7ef74bdf6e1e1797baef91d512d5c44bdb7c645c",
+    "checkpoint": "merged-pr:28",
+    "planHash": "fa6d9724098bd105eaca2137448d0ff606a021e4acd0b827610805634f9616f1",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -66,7 +66,7 @@
   "knowledge": {
     "action": "无需变更",
     "target": null,
-    "reason": "版本事实由 README/help/COMMANDS 目录承载，不构成独立执行约束"
+    "reason": "re-confirm on merge commit; facts carried by README/COMMANDS"
   }
 }
 ---

@@ -13,5 +13,6 @@
 | 20260917-fix-missing-arg-hints | ✅ 完成 | shadow-docs/changes/archive/20260917-fix-missing-arg-hints/brief.md |
 | 20260917-fix-plan-credential-chain | ✅ 完成 | shadow-docs/changes/archive/20260917-fix-plan-credential-chain/brief.md |
 | 20260917-refactor-compat-and-domain-convergence | ✅ 完成 | shadow-docs/changes/archive/20260917-refactor-compat-and-domain-convergence/brief.md |
+| 20260918-feature-cli-version | ✅ 完成 | shadow-docs/changes/archive/20260918-feature-cli-version/brief.md |
 | 20260918-fix-cross-platform-ci | ✅ 完成 | shadow-docs/changes/archive/20260918-fix-cross-platform-ci/brief.md |
 | 20260918-fix-installer-ci-cmd-assert | ✅ 完成 | shadow-docs/changes/archive/20260918-fix-installer-ci-cmd-assert/brief.md |
