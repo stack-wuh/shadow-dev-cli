@@ -56,6 +56,11 @@ test('offline install: pointer, managed shims, installed shim runs', skip, () =>
   const shim = readFileSync(join(bin, 'shadow-dev'), 'utf8')
   assert.match(shim, /managed-by: shadow-dev-cli-installer/)
   assert.equal(existsSync(join(bin, 'shadow-dev.cmd')), platform() === 'win32', '.cmd shim is generated on Windows only')
+  if (platform() === 'win32') {
+    const cmd = readFileSync(join(bin, 'shadow-dev.cmd'), 'utf8')
+    assert.ok(cmd.includes('\r\n'), '.cmd shim must be CRLF: LF-only batch files make cmd.exe mis-tokenize (stray command errors)')
+    assert.ok(!/[^\x00-\x7f]/.test(cmd), '.cmd shim must be ASCII-only (codepage-safe comments)')
+  }
   const viaShim = spawnSync('bash', [toUnix(join(bin, 'shadow-dev')), 'help'], { encoding: 'utf8' })
   assert.equal(viaShim.status, 0, viaShim.stderr)
   assert.match(viaShim.stdout, /"ok":true/)

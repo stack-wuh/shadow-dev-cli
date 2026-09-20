@@ -96,19 +96,21 @@ gen_shims() {
     MINGW*|MSYS*|CYGWIN*)
       WINROOT="$PREFIX"
       if command -v cygpath >/dev/null; then WINROOT="$(cygpath -w "$PREFIX")"; fi
+      # cmd.exe 批处理解析器依赖 CRLF 断句：LF-only 文件会跨行吞读、把 rem 注释切碎成伪命令（'m' 告警），
+      # 且注释必须纯 ASCII 以规避 GBK 码页噪音 —— heredoc/echo 直写 LF 不可用于 .cmd。
       {
-        echo '@echo off'
-        echo "rem $MARK v2 — generated file, regenerate via install-cli.sh, do not edit"
-        echo "set \"ROOT=$WINROOT\""
-        echo 'set "L="'
-        echo 'if exist "%ROOT%\LINK" set /p L=<"%ROOT%\LINK"'
-        echo 'if not defined L goto materialized'
-        echo 'node "%L%\cli.mjs" %*'
-        echo 'exit /b %errorlevel%'
-        echo ':materialized'
-        echo 'set /p V=<"%ROOT%\CURRENT"'
-        echo 'if "%V%"=="" (echo shadow-dev: not installed 1>&2 & exit /b 1)'
-        echo 'node "%ROOT%\shadow-dev-cli-%V%\cli.mjs" %*'
+        printf '@echo off\r\n'
+        printf 'rem %s v2 - generated file, regenerate via install-cli.sh, do not edit\r\n' "$MARK"
+        printf 'set "ROOT=%s"\r\n' "$WINROOT"
+        printf 'set "L="\r\n'
+        printf 'if exist "%%ROOT%%\\LINK" set /p L=<"%%ROOT%%\\LINK"\r\n'
+        printf 'if not defined L goto materialized\r\n'
+        printf 'node "%%L%%\\cli.mjs" %%*\r\n'
+        printf 'exit /b %%errorlevel%%\r\n'
+        printf ':materialized\r\n'
+        printf 'set /p V=<"%%ROOT%%\\CURRENT"\r\n'
+        printf 'if "%%V%%"=="" (echo shadow-dev: not installed 1>&2 & exit /b 1)\r\n'
+        printf 'node "%%ROOT%%\\shadow-dev-cli-%%V%%\\cli.mjs" %%*\r\n'
       } > "$BIN/shadow-dev.cmd"
     ;;
   esac
