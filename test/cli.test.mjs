@@ -673,6 +673,28 @@ test('publish pushes normally and creates a PR when none exists', () => {
   } finally { api.close() }
 })
 
+test('publish defaults the PR body to Closes #N when the brief has an issue', () => {
+  const root = fixture()
+  addOrigin(root)
+  execFileSync('git', ['switch', '-c', 'feat/sample'], { cwd: root })
+  writeFileSync(join(root, 'feature.txt'), 'feature\n')
+  execFileSync('git', ['add', '--', 'feature.txt'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'feature'], { cwd: root })
+  updateBrief(root, data => { data.github.repository = 'owner/repo'; data.branch = 'feat/sample'; data.github.issue = 5 })
+  const api = apiStub([
+    { method: 'GET', path: '/repos/owner/repo/pulls?', body: [] },
+    { method: 'POST', path: '/repos/owner/repo/pulls', body: { number: 9, html_url: 'https://github.test/pulls/9' } },
+  ])
+  try {
+    const args = ['--name', 'sample', '--title', 'Feature']
+    const planned = run(['publish', 'plan', ...args, '--json'], root)
+    const result = run(['publish', 'execute', ...args, '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    const created = api.requests().find(request => request.method === 'POST')
+    assert.match(JSON.parse(created.body).body, /Closes #5/)
+  } finally { api.close() }
+})
+
 test('publish reuses an existing open PR', () => {
   const root = fixture()
   addOrigin(root)
