@@ -4,7 +4,7 @@
   "name": "20260925-chore-bootstrap-v14",
   "type": "chore",
   "scope": "distribution",
-  "status": "branched",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "chore/20260925-chore-bootstrap-v14",
   "files": [
@@ -16,18 +16,18 @@
     "repository": null,
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
+    "pullRequest": 32,
     "pullRequestUrl": null
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "497a6b799fd36e2f0cfada7be8fd5b837eefe1b1",
+    "verifiedAt": "2026-09-25T08:08:49.171Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
-    "planHash": "8dfc9ec451e8fce3900c32f521be889b3a740dfd4eb5428ebb4957be4eae97b9",
+    "checkpoint": "merged-pr:32",
+    "planHash": "892d41922726484403b0ccf4dc1edd7042865115d78e5c7b7b06a6d495a0f42d",
     "updatedAt": null,
     "lastError": null,
     "release": {
@@ -41,6 +41,11 @@
       "title": "20260925-chore-bootstrap-v14",
       "body": ""
     }
+  },
+  "knowledge": {
+    "action": "更新",
+    "target": "shadow-docs/knowledge/install-distribution.md",
+    "reason": "双产物契约/adapters/命名冲突/release 非任务/readdir 确定化"
   }
 }
 ---
