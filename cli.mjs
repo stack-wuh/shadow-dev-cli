@@ -23,6 +23,8 @@ import * as change from './lib/domains/change.mjs'
 import * as task from './lib/domains/task.mjs'
 import * as inspect from './lib/domains/inspect.mjs'
 import * as index from './lib/domains/index.mjs'
+import * as workflow from './lib/domains/workflow.mjs'
+import * as bind from './lib/domains/bind.mjs'
 
 const DOMAINS = { branch, sync, review, commit, publish, release, reconcile, archive, issue, index }
 
@@ -75,6 +77,9 @@ async function handle(r, p, o) {
   if (d === 'change' && a === 'create') return { ok: true, command: 'change.create', data: change.create(r, o) }
   if (d === 'change' && a === 'approve') return { ok: true, command: 'change.approve', data: change.approve(r, o) }
   if (d === 'change' && a === 'list') return { ok: true, command: 'change.list', data: change.list(r, o) }
+  // 生态分发域：宿主无关、不要求 git 仓库，r 允许为 null
+  if (d === 'workflow') return await workflow.handle(a, o)
+  if (d === 'bind') return await bind.handle(a, o)
   if (Object.hasOwn(DOMAINS, d)) {
     const verb = a === 'rebuild' ? s : a, c = a === 'rebuild' ? `${d}.rebuild` : d
     if (verb === 'plan') return await planDomain(c, DOMAINS[d], r, o)
@@ -102,7 +107,7 @@ try {
     human.printHelp(L, v)
   } else {
     human.enter(L, p)
-    v = human.decorate(await handle(root(), p, o), o)
+    v = human.decorate(await handle(p[0] === 'workflow' || p[0] === 'bind' ? null : root(), p, o), o)
     human.done(L, v, Date.now() - t0)
   }
   if (jsonEnabled(o)) out(v)
