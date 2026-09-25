@@ -1,107 +1,256 @@
 # shadow-dev-cli
 
-Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute 两段式：`plan` 输出 planHash 并持久化进 brief，`execute` 必须携带确认与匹配的 planHash 才会落盘或调用外部系统，杜绝不可复现的隐式变更。planHash 覆盖命令的语义输入，但剥离 plan 自身的副作用（写回 brief 的凭证字段、易变 worktree 快照 `changedFiles`/`clean`）——干净树上 plan→execute 同样可复现。
+Shadow dev 工作流的确定性脚手架 CLI。所有写操作走 **plan → execute 两段式**：`plan` 输出 planHash,`execute` 必须携带确认与匹配的 planHash 才会落盘或调用外部系统。纯 Node.js（≥20）、零 npm 依赖、单命令入口 `shadow-dev`。
 
-纯 Node.js（>=20）、零 npm 依赖、单命令入口 `shadow-dev`。
+CLI 有两类用途，本文档按此组织：
 
-## 命令
+1. **装好并维护 shadow 生态**（`workflow` / `bind` 命令，任意目录可用）——看 [30 秒快速开始](#30-秒快速开始)
+2. **在业务仓库里跑确定性开发工作流**（brief 生命周期命令，需在 git 仓库内）——看 [仓库工作流](#在业务仓库里跑-shadow-工作流)
 
-| 命令 | 说明 |
+---
+
+## 30 秒快速开始
+
+### 新机器：一条命令装好整个生态
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stack-wuh/shadow-dev-cli/v1.4.0/scripts/bootstrap.sh | bash -s claude-code
+```
+
+这条命令做三件事：
+
+| 步骤 | 结果 |
 |------|------|
-| `version` | CLI 版本（任意目录可用，不要求 git 仓库） |
-| `repo inspect` | 查看仓库状态（分支、HEAD、脏文件） |
-| `change create\|approve\|list` | 创建/批准变更 brief；`list` 默认只列活动变更，`--all` 合并归档、`--archived` 只列归档（条目带 `archived` 布尔） |
-| `issue plan\|execute` | 创建 GitHub issue（正文由 brief 确定性渲染，见「Issue 正文结构契约」） |
-| `branch plan\|execute` | 建功能分支 |
-| `sync plan\|execute` | fast-forward 同步上游 |
-| `conflict inspect` | 检查 active brief 文件重叠 |
-| `task list\|set` | 查看/勾选 brief 任务 |
-| `review plan\|execute` | 记录审查结论与知识评估 |
-| `commit plan\|execute` | 按显式文件列表提交 |
-| `publish plan\|execute` | 推分支并创建 PR |
-| `release plan\|execute` | 提交 + 推送 + 建 PR 复合操作 |
+| ① 安装 CLI 最新版 | `~/.local/share/shadow-dev-cli/shadow-dev-cli-<版本>/` + 托管 shim `~/.local/bin/shadow-dev` |
+| ② 拉取工作流产物 | `~/.local/share/shadow-dev-workflow/shadow-dev-workflow-<版本>/`（skills、规则、知识库、适配器） |
+| ③ 绑定宿主技能 | 按 claude-code 适配器把 6 个技能复制进 `~/.claude/skills/`（带托管标记，可一键解绑） |
+
+> - 末尾参数是宿主名：`claude-code`（原生）或 `zcode`（兼容直用）。宿主清单由产物内 `adapters/<host>.json` 决定，新增宿主 = workflow 仓加一个描述符发版，**CLI 无需更新**。
+> - 装完确认 `~/.local/bin` 在 PATH：`export PATH="$HOME/.local/bin:$PATH"`（建议写进 shell 配置）。
+
+### 验证
+
+```bash
+shadow-dev version          # CLI 版本（任意目录可用）
+shadow-dev workflow status  # 产物状态：current / previous / linked / resolved
+shadow-dev bind status      # 各宿主：是否在场、绑定了哪些技能
+```
+
+### 日常更新 / 回滚 / 解绑
+
+```bash
+# 更新产物到最新版：plan 给出 planHash → execute 凭它落盘
+shadow-dev workflow plan
+shadow-dev workflow execute --plan-hash <复制上面输出的 planHash> --confirm
+
+# 新版本有问题，一键回滚上一版（离线，不动 shim）
+shadow-dev workflow rollback --confirm
+
+# 解绑某宿主技能（按托管清单移除，不碰其他文件）
+shadow-dev bind unbind --host claude-code --confirm
+```
+
+### 开发者双仓模式（改 workflow 源码即时生效）
+
+```bash
+shadow-dev workflow link --dir ~/github/shadow-dev-workflow --confirm   # LINK 直通轨，优先于安装版本
+shadow-dev workflow unlink --confirm                                    # 移除直通，回落安装版本
+```
+
+---
+
+## 在业务仓库里跑 shadow 工作流
+
+前置：git 仓库；网络类命令（issue / publish / release / archive）需要 GitHub 凭证——`export GH_TOKEN="$(gh auth token)"` 或设置 `GITHUB_TOKEN`。
+
+一个变更的完整生命周期（**所有写命令都要 `--confirm`**）：
+
+```bash
+cd your-repo
+
+# ① 创建并批准变更 brief
+#    brief 落在 shadow-docs/changes/<名称>/brief.md，编辑它写清动机、决策与任务清单
+shadow-dev change create --name 20260925-fix-login --type fix --confirm
+shadow-dev change approve --name 20260925-fix-login --confirm
+
+# ② 建功能分支（从基线分支切出）
+shadow-dev branch plan --name 20260925-fix-login
+shadow-dev branch execute --name 20260925-fix-login --confirm
+
+# ③ 写代码……完成后勾任务（任务清单来自 brief 正文）
+shadow-dev task set --name 20260925-fix-login --task task-1 --state done --confirm
+
+# ④ 审查（任务全部勾选才允许写 passed）
+shadow-dev review plan --name 20260925-fix-login
+shadow-dev review execute --name 20260925-fix-login --conclusion passed --confirm
+
+# ⑤ 提交 + 推分支 + 开 PR（一步；文件列表必须显式，禁止 git add .）
+shadow-dev release plan --name 20260925-fix-login --files src/login.ts --message "fix: 登录超时"
+shadow-dev release execute --name 20260925-fix-login --confirm
+
+# ⑥ 在 GitHub 上合并 PR，然后归档（brief 移入 archive/ 并重建 INDEX）
+shadow-dev archive plan --name 20260925-fix-login
+shadow-dev archive execute --name 20260925-fix-login --confirm
+```
+
+常用变体：
+
+```bash
+shadow-dev commit plan  --name <名称> --files a.ts,b.ts --message "fix: x"   # 只提交不开 PR
+shadow-dev commit execute --name <名称> --confirm                            # 参数已持久化,免重传
+shadow-dev publish plan  --name <名称> --title "标题"                        # 只推分支开 PR,不提交
+shadow-dev publish execute --name <名称> --confirm
+shadow-dev issue plan  --name <名称> --labels fix                            # 由 brief 确定性渲染 issue
+shadow-dev issue execute --name <名称> --confirm
+```
+
+---
+
+## 命令参考
+
+### 生态分发：workflow / bind（无 brief 域，任意目录可用）
+
+这两个域没有 brief,`--plan-hash` 是 execute 的唯一凭证。
+
+| 命令 | 作用 | 关键参数 |
+|------|------|----------|
+| `workflow plan` | 解析目标版本并输出 planHash | `--release v6.3.1` 固定版本；`--from <目录\|tarball>` 离线安装；缺省取 latest |
+| `workflow execute` | 下载/物化产物，切版本指针 | `--plan-hash <hash> --confirm`；先冒烟后落盘，保留上一版供回滚 |
+| `workflow status` | 查看安装状态 | 输出 current / previous / linked / resolved |
+| `workflow rollback` | 回滚上一版 | `--confirm`；离线对调 CURRENT/PREVIOUS |
+| `workflow link` | 直通轨（开发用） | `--dir <checkout> --confirm`；LINK 优先于 CURRENT，源码改动即时生效 |
+| `workflow unlink` | 移除直通 | `--confirm`；只删 LINK，回落 CURRENT 版本 |
+| `bind plan` | 预览绑定清单 | `--host auto\|claude-code\|zcode…`；auto 只探测本机存在的宿主 |
+| `bind execute` | 执行绑定 | `--host <名> --plan-hash <hash> --confirm`；复制 + sidecar 托管标记 |
+| `bind status` | 绑定状态 | 各宿主在场情况与托管技能清单 |
+| `bind unbind` | 解绑 | `--host <名> --confirm`；按 sidecar 精确移除 |
+
+安装布局：
+
+```
+~/.local/share/shadow-dev-workflow/
+├── shadow-dev-workflow-<版本>/     # 版本化产物（marketplace/package/skills/hooks/rules/knowledge/norms/docs/scripts/adapters）
+├── CURRENT / PREVIOUS             # 版本指针（文本文件）
+├── LINK                           # 直通指针（仅 link 轨写入；解析序 LINK → CURRENT）
+└── …                              # 旧版本目录自动清理,保留当前与上一版
+
+~/.claude/skills/                   # 绑定目标（zcode 为 ~/.zcode/skills）
+├── shadow-dev-propose/ …          # 六个技能目录
+└── .shadow-dev-workflow.json      # 托管清单（unbind 的依据;非托管同名目录会被拒绝覆盖）
+```
+
+### brief 生命周期（git 仓库内）
+
+| 命令 | 作用 |
+|------|------|
+| `change create \| approve \| list` | 创建 / 批准变更 brief；`list` 列变更（`--all` 含归档、`--archived` 只列归档） |
+| `branch plan \| execute` | 从基线分支建功能分支 |
+| `sync plan \| execute` | fast-forward 同步上游（分叉时拒绝自动合并） |
+| `conflict inspect` | 检查活动变更间的文件重叠 |
+| `task list \| set` | 查看 / 勾选 brief 任务清单 |
+| `review plan \| execute` | 写入审查结论与知识评估（任务未全勾选拒绝 passed） |
+| `commit plan \| execute` | 按显式文件列表提交（参数持久化,execute 可免重传） |
+| `publish plan \| execute` | 推分支并创建/复用 PR（缺省带 `Closes #N`） |
+| `release plan \| execute` | 提交 + 推送 + 开 PR 复合操作 |
 | `pr inspect` | 查看 brief 关联 PR |
-| `reconcile plan\|execute` | 对齐 brief 状态与实际进度 |
-| `archive plan\|execute` | 归档已合并变更并重建 INDEX |
-| `index rebuild plan\|execute` | 重建变更索引 |
-| `workflow plan\|execute` | 物化 shadow-dev-workflow 产物（release tarball → 版本化目录 → CURRENT/PREVIOUS 指针；`--release`/`--from`/latest 三路解析） |
-| `workflow rollback\|status` | 产物版本回滚（离线对调指针）/ 查看安装状态 |
-| `workflow link\|unlink` | link 直通轨：指向本机 checkout，改动即生效；`unlink` 移除 LINK 回落 CURRENT |
-| `bind plan\|execute` | 按产物 `adapters/<host>.json` 把 skills 绑入宿主发现目录（复制 + sidecar 托管标记，非托管同名目录拒绝覆盖；`--host auto` 探测） |
-| `bind status\|unbind` | 查看各宿主绑定状态 / 按 sidecar 解绑 |
+| `reconcile plan \| execute` | 对齐 brief 状态与实际进度 |
+| `archive plan \| execute` | 归档已合并变更并重建 INDEX（要求 review passed 且 PR 已合并） |
+| `issue plan \| execute` | 由 brief 确定性渲染并创建 GitHub issue |
+| `index rebuild plan \| execute` | 重建变更索引（无 brief 域） |
 
-`workflow`/`bind` 是**无 brief 域**：`--plan-hash` 是 execute 的唯一凭证，且不要求 git 仓库（任意目录可用）。安装布局 `~/.local/share/shadow-dev-workflow/shadow-dev-workflow-<ver>/` + `CURRENT`/`PREVIOUS` 指针 + `LINK` 直通指针（解析序 LINK → CURRENT），与 CLI 自身安装器同构；产物契约（`marketplace.json`/`package.json`/`skills`）见 [shadow-dev-workflow](https://github.com/stack-wuh/shadow-dev-workflow) 的 `scripts/pack.mjs`。
+### 辅助
 
-**输出模型**：JSON 是机器契约面——单行格式，成功 `{"ok":true,"command":...,"data":...}`，失败 `{"ok":false,"error":{"code","message"}}`。其出现按环境路由：管道/重定向（agent、脚本）默认输出；**交互终端默认不输出 JSON，只看人用层**，任何环境想显式拿 JSON 用 `--json` 或 `SHADOW_DEV_JSON=1`。退出码不受 JSON 抑制影响。带流程后继的命令，成功结果的 `data.nextStep` 给出下一步建议命令（稳定英文模板，不随语言变化，agent 可直接消费）。
+| 命令 | 作用 |
+|------|------|
+| `version` | CLI 版本（任意目录可用,不要求 git 仓库） |
+| `repo inspect` | 查看仓库状态（分支、HEAD、脏文件） |
+| `help [命令组]` / `help --full` | 人读命令表 / 结构化命令目录 |
 
-## 人用输出层（stderr）
+---
 
-CLI 在 stderr 渲染一层人类提示：进场横幅（命令+参数）、收场摘要（结果+耗时，plan 命令含 `planHash`）、`nextStep` 引导、错误码的本地化解释与示例命令。stderr 内容不承载 JSON 契约，可随时关闭；但在交互终端抑制 stdout JSON 时它是唯一信息通道，`plan` 收场行的 `planHash` 即可直接取用。
+## 核心机制：plan → execute
 
-- 语言解析：`--lang zh|en` > `SHADOW_DEV_LANG` > 系统 locale 自动探测 > 默认 `zh`。非法取值报 `INVALID_LANG`（退出码 2）。
-- 关闭提示：`SHADOW_DEV_QUIET=1`（或 `true`）时 stderr 零输出，适合日志管道。
-- 语言只影响 stderr 文案；错误 code、JSON 结构、`nextStep` 模板均不本地化。
-- 缺必填参数报错时，stderr 逐行列出该命令在命令目录中的完整参数描述（`flag * 说明`，含示例值与来源位置），示例行的占位符与目录一致（如 `--name <change-name>`）——提示与人用 help 共享同一事实源 `lib/commands.mjs`。
-- `shadow-dev help` 概览默认只回最小面：`data.help`（命令一览字符串，约 350 字节）；agent 需要结构化明细（usage/参数/必填/示例/nextStep）时用 `shadow-dev help --full`。`shadow-dev help <命令>` 查看单组详情，恒定结构化（组面小）。stderr 中文命令表不受 `--full` 影响。
+- `plan` 对计划数据做 SHA256 得到 **planHash**。带 `--name` 的域把 hash 持久化进 brief,`execute` 自动校验,无需搬运；无 brief 域（`workflow` / `bind` / `index rebuild`）hash 不落盘,`execute` 必须显式 `--plan-hash`。
+- plan 之后相关状态有任何变化 → `PLAN_HASH_INVALID`（退出码 1）,重跑 plan 即可；没跑 plan 就 execute → `PLAN_HASH_REQUIRED`（退出码 2）。
+- 所有写操作必须显式 `--confirm`。
 
-## Issue 正文结构契约
+### 退出码
 
-`issue plan/execute` 的正文由 brief **确定性渲染**（纯字符串拼接，零 AI 推导），所有 issue 共享统一骨架：
+| 码 | 含义 | 典型错误码 |
+|----|------|-----------|
+| 0 | 成功 | — |
+| 1 | 输入/校验错误 | `PLAN_HASH_INVALID`、`BRIEF_NOT_FOUND`、`NAME_REQUIRED`、`TASKS_NOT_COMPLETE`、`REVIEW_NOT_PASSED`、`PR_NOT_MERGED`、`ARTIFACT_INVALID`、`UNMANAGED_TARGET` |
+| 2 | 缺少确认或凭证 | `CONFIRMATION_REQUIRED`、`PLAN_HASH_REQUIRED` |
+| 3 | 外部系统失败 | `GITHUB_TOKEN_REQUIRED`、`GITHUB_API_ERROR`、`API_TIMEOUT`、`GIT_PUSH_FAILED`、`DOWNLOAD_FAILED`、`RELEASE_NOT_FOUND` |
+| 4 | 不支持的操作 | `UNSUPPORTED_OPERATION`（如 `git add .`、绝对路径） |
 
-1. 固定分节 `## 动机 / ## 引用规范 / ## 决策 / ## 任务`——从 brief 同名分节白名单搬运，缺节以 `（brief 缺少该节）` 占位；`结果/知识评估` 等内部节不进 issue。
-2. 可选 `## 补充`（来自 `--body`），随后 `完整 brief：shadow-docs/changes/<name>/brief.md` 指针行。
-3. 正文末行 `<!-- shadow-dev:issue-metadata {...} -->` 机器通道（name/type/scope/status/branch/baseBranch/briefPath/cliVersion/prUrl/issueNumber），插件或站点按正则单行提取。
-4. 标题自动补 `[type] ` 前缀，已带同类前缀则幂等不重复。
+### 输出面
 
-`issue plan` 的 stdout 只回摘要 `{name,title,labels,repository,bodyBytes,bodySha256,sections}`（约 0.6KB），不回显全文；「预览即提交」由 `bodySha256` 承担——plan 之后 brief 正文有任何变动都会令 execute 报 `PLAN_HASH_INVALID`，重跑 plan 即刷新。全文唯一存放处是 brief 的 `workflow.issuePlan.body`。
+- stdout 恒为**单行 JSON**（机器契约）：成功 `{"ok":true,"command":…,"data":…}`,失败 `{"ok":false,"error":{code,message}}`。
+- 出现与否按环境路由：管道/脚本中恒输出；**交互终端默认只看 stderr 人用层**（横幅、耗时、下一步建议）。任何环境想要 JSON：加 `--json` 或 `SHADOW_DEV_JSON=1`。
+- 交互终端下 plan 的 `planHash` 仍打印在 stderr,可直接复制给 execute。
+- 成功结果的 `data.nextStep` 是下一步建议命令（稳定英文模板,agent 可直接消费）。
 
-## 平台兼容
-
-- `--files` 路径参数接受 Windows 反斜杠写法（如 `lib\a.mjs`），自动归一为正斜杠并与 git 状态、conflict 比对对齐。
-- `brief.md` 解析容忍 LF/CRLF（兼容 Windows `core.autocrlf` 检出与手工编辑），CLI 写回一律统一为 LF。
-- git fetch/push 带 120 秒超时，避免凭据弹窗导致的永久挂起；GitHub API 超时见下方环境变量。
-
-## 退出码
-
-- `0` 成功
-- `1` 输入/校验错误
-- `2` 缺少确认（`--confirm` / `--plan-hash`）
-- `3` 外部系统失败（git push/fetch、GitHub API）
-- `4` 不支持的操作（如隐式 `git add .`）
+---
 
 ## 环境变量
 
-- `GITHUB_TOKEN` / `GH_TOKEN`：GitHub API 必需（issue/publish/release/archive）。
-- `SHADOW_GITHUB_API_URL`：覆盖 API base URL（测试/代理），默认 `https://api.github.com`。
-- `SHADOW_API_TIMEOUT_MS`：API 超时，默认 15000。
-- `SHADOW_DEV_LANG`：`zh|en`，stderr 人用层语言（被 `--lang` 覆盖）。
-- `SHADOW_DEV_QUIET`：非空且非 `0` 时关闭 stderr 人用层。
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `GITHUB_TOKEN` / `GH_TOKEN` | — | GitHub API 凭证（issue/publish/release/archive 必需;workflow 拉公开 release 可选）。gh 已认证时：`export GH_TOKEN="$(gh auth token)"` |
+| `SHADOW_GITHUB_API_URL` | `https://api.github.com` | API 地址（测试/代理） |
+| `SHADOW_API_TIMEOUT_MS` | `15000` | API 超时 |
+| `SHADOW_DEV_JSON` | — | `1` 等价 `--json` |
+| `SHADOW_DEV_LANG` | 自动探测 | `zh` / `en`,只影响 stderr 文案 |
+| `SHADOW_DEV_QUIET` | — | `1` 关闭 stderr 人用层 |
+| `SHADOW_WORKFLOW_PREFIX` | `~/.local/share/shadow-dev-workflow` | workflow 产物前缀 |
+| `SHADOW_WORKFLOW_HOME` | 用户 home | bind 解析 `~/.claude/skills` 等的根（测试/隔离用） |
+| `SD_PREFIX` / `SD_BIN` | `~/.local/share/shadow-dev-cli` / `~/.local/bin` | CLI 安装位（install-cli.sh 与 bootstrap 透传） |
+| `SHADOW_CLI_HOOK_DISABLE` | — | `1` 跳过插件的 SessionStart 自举（双仓开发时保护手动安装） |
 
-## 安装与分发
+## 安装细节（scripts/install-cli.sh）
 
-`scripts/install-cli.sh` 是唯一安装入口，供 [shadow-dev-workflow](https://github.com/stack-wuh/shadow-dev-workflow) 插件钩子与手工共用：
+bootstrap 的底层是同一个安装器,也可单独使用：
 
 ```bash
-bash scripts/install-cli.sh install            # 拉取最新 release，物化+自校验+生成托管 shim
-bash scripts/install-cli.sh install --json     # 插件钩子用：单行机器输出（幂等，已最新秒退）
-bash scripts/install-cli.sh status --json      # 当前/上一版本指针 + linked 映射目标
-bash scripts/install-cli.sh rollback           # 切回上一版（离线，不触网）
-bash scripts/install-cli.sh install --from dist/shadow-dev-cli-v1.1.0.tar.gz  # 离线安装
-bash scripts/install-cli.sh link D:/works/shadow-dev-cli  # 开发直通：shim 映射到仓库真实地址，代码即改即生效
-bash scripts/install-cli.sh unlink             # 取消映射，回到 release 轨
+bash scripts/install-cli.sh install                    # 装最新版
+bash scripts/install-cli.sh install --version v1.3.0   # 装指定版本
+bash scripts/install-cli.sh install --channel main     # 装 main 分支构建
+bash scripts/install-cli.sh install --from <tarball>   # 离线安装
+bash scripts/install-cli.sh rollback                   # 回滚上一版（离线）
+bash scripts/install-cli.sh status                     # 查看 CURRENT/PREVIOUS
+bash scripts/install-cli.sh link <本仓库路径>            # link 直通轨（CLI 自身开发用）
+bash scripts/install-cli.sh unlink                     # 移除 CLI 的 LINK
 ```
 
-- **双轨并存**：shim 运行时按 `LINK → CURRENT` 两段解析——`link` 轨供 CLI 开发者/本机长期使用（落指针前同样校验 `cli.mjs`+`package.json` 并冒烟 `help --json`），release 物化轨（插件钩子契约）不受影响；`install` 不覆盖 `LINK`，`unlink` 即回退。
-- 布局：`~/.local/share/shadow-dev-cli/shadow-dev-cli-<ver>/` + `CURRENT`/`PREVIOUS`/`LINK` 指针文件；shim（`~/.local/bin/shadow-dev` 与 `.cmd`）运行时读指针——更新与回滚都不再改动 shim 文件。自定义位置用 `--prefix` / `--bin`。
-- 安全边界：发布前先物化并自跑 `help --json`，失败则指针不动（旧版本照常可用）；shim 路径被**非托管**同名文件占用时告警退出、绝不覆盖；并发运行有锁（陈旧 10 分钟自动接管）。
-- 退出码：`0` 成功/已最新 · `1` 参数或冲突 · `2` 网络/GitHub API · `3` 产物自校验失败。信任边界为 HTTPS + GitHub 仓库，未做独立校验和。
-- 通道：默认 release（可复现）；`--version v*` 锁版本；`--channel main` git 浅拉 rolling，仅供插件开发。依赖 bash + node(≥20) + tar（main 通道另需 git；curl 缺失自动退 wget），Windows 在 Git Bash 下运行。
-- 纯手工使用（不装 shim）：克隆本仓库后直接 `node cli.mjs --help`。
+- 布局：`$PREFIX/shadow-dev-cli-<版本>/` + `CURRENT`/`PREVIOUS` 指针 + `$BIN/shadow-dev` 托管 shim（运行时读指针,更新与回滚不动 shim 本体）。
+- 落盘前自校验（`help --json` 冒烟）失败则指针不动;非托管同名 shim 占位时拒绝覆盖,绝不静默。
+
+## 排障
+
+| 症状 | 处置 |
+|------|------|
+| `shadow-dev: command not found` | 把 `~/.local/bin` 加入 PATH |
+| `CONFIRMATION_REQUIRED` | 写操作补 `--confirm` |
+| `PLAN_HASH_REQUIRED` | 先运行同命令的 plan |
+| `PLAN_HASH_INVALID` | plan 之后输入变了,重跑 plan |
+| `GITHUB_TOKEN_REQUIRED` | `export GH_TOKEN="$(gh auth token)"` |
+| `WORKFLOW_NOT_INSTALLED` | 先跑 workflow plan + execute,或直接跑 bootstrap |
+| `ADAPTERS_MISSING` | workflow 产物过旧（< v6.3.1）,更新产物 |
+| `UNMANAGED_TARGET` | 宿主目录存在同名非托管技能;手动移除后重试（绝不静默覆盖） |
+| `DIRTY_WORKTREE` | 工作区有未提交业务改动,先 commit 或还原 |
+| 插件 hook 提示「未能就位」 | 离线导致;联网后重开会话,或手动 `bash scripts/install-cli.sh install` |
 
 ## 开发
 
 ```bash
-npm test   # node --test，55 项 CLI 契约 + 8 项安装器契约（离线产物全链、link 双轨、冲突保护、回滚、自校验）
+npm test   # node --test;契约测试覆盖全部命令域(test/cli.test.mjs 是唯一契约规格)
 ```
 
-行为契约：命令、JSON 输出结构、错误码、planHash 机制保持稳定；`test/cli.test.mjs` 是唯一契约规格。
+- 零 npm 依赖,Node ≥ 20。
+- 行为契约：命令面、JSON 输出结构、错误码、planHash 机制保持稳定;改动必须测试同铺。
+- 本 CLI 随 [shadow-dev-workflow](https://github.com/stack-wuh/shadow-dev-workflow) 插件分发(插件 SessionStart hook 自动安装 pin 版 CLI);完整命令语义与工作流配合见其 `docs/cli-guide.md`。
+
+## License
+
+MIT
