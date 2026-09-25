@@ -6,7 +6,8 @@ scope: [lib/plan.mjs, cli.mjs, lib/git.mjs]
 status: active
 source:
   - changes/20260917-fix-plan-credential-chain/brief.md
-verified: 2026-09-17
+  - changes/20260925-fix-cli-silent-failures/brief.md
+verified: 2026-09-25
 ---
 
 # plan/execute 凭证链与哈希边界
@@ -20,7 +21,7 @@ verified: 2026-09-17
 - 新增命令域导出 `planData` 时，凡包含 `repo` 状态，其 `changedFiles`/`clean` 已被 `norm()` 剥离，无需自行处理；不得为了「哈希稳定」把 head/branch 也剥掉。
 - 脏工作区的行为门禁（如 `sync` 的 `DIRTY_WORKTREE`）必须在命令域 `planData` 内联执行——plan 与 execute 都会跑一次，这是哈希剥离脏状态后唯一的脏检查通道，不得移入哈希输入。
 - `git()` 输出只做尾部裁剪（`trimEnd`）：`git status --porcelain` 状态行以空格开头（` M path`），消费方从下标 3 取路径，全局 `trim()` 会截掉首行路径首字符。
-- execute 端若命令的 `planData` 依赖 flag（如 `commit`/`publish`/`release` 的 `--files`/`--message`/`--title`/`--body`），execute 必须传与 plan 完全一致的参数，否则 `PLAN_HASH_INVALID` 属预期行为。
+- execute 端若命令的 `planData` 依赖 flag 且该 flag **未持久化**（如 `publish`/`release` 的 `--title`/`--body`），execute 必须传与 plan 完全一致的参数，否则 `PLAN_HASH_INVALID` 属预期行为。已持久化的 flag 不受此限：`commit` 的 `--files`/`--message` 经 `workflow.commit` 持久化（`persistPlan` + `norm` 剥离，20260925-fix-cli-silent-failures 起），`release` 的经 `workflow.release`——execute 可只传 `--name --confirm`。新命令域引入可持久化 flag 时必须三处同步：`persistPlan` 写回、`norm()` 剥离、`planData` 回退读取。
 
 ## 适用边界
 

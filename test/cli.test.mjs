@@ -841,3 +841,62 @@ test('release execute commits, pushes and creates the PR in one step, then reuse
     assert.deepEqual(reuse.requests().map(request => request.method), ['GET'])
   } finally { reuse.close() }
 })
+
+// ---- 20260925-fix-cli-silent-failures：三类静默失败/易错点的行为契约 ----
+
+test('branch execute on a non-base branch fails loudly and leaves the brief untouched', () => {
+  const root = fixture()
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  execFileSync('git', ['switch', '-c', 'drift'], { cwd: root })
+  const planned = run(['branch', 'plan', '--name', 'sample', '--json'], root)
+  assert.equal(planned.status, 0, planned.stderr)
+  const result = run(['branch', 'execute', '--name', 'sample', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root)
+  assert.equal(result.status, 1)
+  assert.equal(JSON.parse(result.stdout).error.code, 'NOT_ON_BASE_BRANCH')
+  const text = readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8')
+  assert.doesNotMatch(text, /"status": "branched"/)
+  assert.doesNotMatch(text, /"branch": "feat\/sample"/)
+})
+
+test('archive execute lands the archive move as a local commit', () => {
+  const root = fixture()
+  const head = () => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root }).toString().trim()
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  updateBrief(root, (d) => {
+    d.status = 'published'
+    d.github = { repository: 'owner/repo', issue: null, issueUrl: null, pullRequest: 9, pullRequestUrl: 'https://github.test/pull/9' }
+    d.review = { conclusion: 'passed', verifiedCommit: head(), verifiedAt: '2026-01-01T00:00:00.000Z' }
+  })
+  const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls/9', body: { number: 9, merged: true, state: 'closed' } }])
+  try {
+    const planned = run(['archive', 'plan', '--name', 'sample', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(planned.status, 0, planned.stderr)
+    const before = head()
+    const result = run(['archive', 'execute', '--name', 'sample', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    const after = head()
+    assert.notEqual(after, before, 'archive must land a local commit')
+    const message = execFileSync('git', ['log', '-1', '--format=%B'], { cwd: root }).toString()
+    assert.match(message, /docs\(shadow\): 归档 sample——PR #9 已合入 main，brief 移入 archive 并重建 INDEX/)
+    const inspect = run(['repo', 'inspect', '--json'], root)
+    assert.deepEqual(JSON.parse(inspect.stdout).data.changedFiles, [], 'archive commit must leave the tree clean')
+  } finally {
+    api.close()
+  }
+})
+
+test('commit execute reuses persisted files and message without re-passing them', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'a.js'), 'a\n')
+  writeFileSync(join(root, 'b.js'), 'b\n')
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  const planned = run(['commit', 'plan', '--name', 'sample', '--files', 'a.js,b.js', '--message', 'feat: two files', '--json'], root)
+  assert.equal(planned.status, 0, planned.stderr)
+  const result = run(['commit', 'execute', '--name', 'sample', '--confirm', '--json'], root)
+  assert.equal(result.status, 0, result.stdout)
+  const message = execFileSync('git', ['log', '-1', '--format=%B'], { cwd: root }).toString()
+  assert.match(message, /feat: two files/)
+})
