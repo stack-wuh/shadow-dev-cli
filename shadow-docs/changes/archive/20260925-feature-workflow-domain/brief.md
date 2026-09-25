@@ -4,7 +4,7 @@
   "name": "20260925-feature-workflow-domain",
   "type": "feature",
   "scope": "distribution",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20260925-feature-workflow-domain",
   "files": [
@@ -18,18 +18,18 @@
     "repository": null,
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 31,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/31"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "77616b56f485c693c952ca114671381de59a87e0",
-    "verifiedAt": "2026-09-25T07:38:24.141Z"
+    "verifiedCommit": "c7c9be4a8e6ed0a2dd0d60088f118bd289376627",
+    "verifiedAt": "2026-09-25T07:53:43.024Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
-    "planHash": "5e7cd62b9be6cf1cfdbe5e3f98d7005ed47a3752a9c450b83cc63780d38d6363",
+    "checkpoint": "merged-pr:31",
+    "planHash": "227762efcdee842b20395b5dcc10182f6f9a5150e3ab4e57e098aa4ede145bf2",
     "updatedAt": null,
     "lastError": null,
     "release": {
@@ -51,7 +51,7 @@
   "knowledge": {
     "action": "更新",
     "target": "shadow-docs/knowledge/install-distribution.md",
-    "reason": "scope 扩展至 lib/domains/workflow.mjs 与 bind.mjs;宿主绑定(描述符数据化、sidecar 托管标记、非托管 guard)为新执行约束;大小写不敏感文件系统上指针文件与入口软链命名不得冲突(CURRENT/current 教训)"
+    "reason": "scope 扩展至 workflow/bind 域;宿主绑定为新执行约束;指针与入口软链命名不得大小写冲突"
   }
 }
 ---
