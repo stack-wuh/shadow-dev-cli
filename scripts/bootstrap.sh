@@ -32,7 +32,7 @@ step "2/3 物化 shadow-dev-workflow 产物（release tarball → 版本化布�
 H="$( "$SD" workflow plan --json | planHash )"
 "$SD" workflow execute --plan-hash "$H" --confirm
 
-step "3/3 绑定宿主：$HOST（adapters 描述符驱动，复制 + 托管标记）"
+step "3/3 绑定宿主：${HOST}（adapters 描述符驱动，复制 + 托管标记）"
 H2="$( "$SD" bind plan --host "$HOST" --json | planHash )"
 "$SD" bind execute --host "$HOST" --plan-hash "$H2" --confirm
 
