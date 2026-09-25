@@ -24,6 +24,13 @@ Shadow dev workflow 的确定性脚手架 CLI。所有命令走 plan → execute
 | `reconcile plan\|execute` | 对齐 brief 状态与实际进度 |
 | `archive plan\|execute` | 归档已合并变更并重建 INDEX |
 | `index rebuild plan\|execute` | 重建变更索引 |
+| `workflow plan\|execute` | 物化 shadow-dev-workflow 产物（release tarball → 版本化目录 → CURRENT/PREVIOUS 指针；`--release`/`--from`/latest 三路解析） |
+| `workflow rollback\|status` | 产物版本回滚（离线对调指针）/ 查看安装状态 |
+| `workflow link\|unlink` | link 直通轨：指向本机 checkout，改动即生效；`unlink` 移除 LINK 回落 CURRENT |
+| `bind plan\|execute` | 按产物 `adapters/<host>.json` 把 skills 绑入宿主发现目录（复制 + sidecar 托管标记，非托管同名目录拒绝覆盖；`--host auto` 探测） |
+| `bind status\|unbind` | 查看各宿主绑定状态 / 按 sidecar 解绑 |
+
+`workflow`/`bind` 是**无 brief 域**：`--plan-hash` 是 execute 的唯一凭证，且不要求 git 仓库（任意目录可用）。安装布局 `~/.local/share/shadow-dev-workflow/shadow-dev-workflow-<ver>/` + `CURRENT`/`PREVIOUS` 指针 + `LINK` 直通指针（解析序 LINK → CURRENT），与 CLI 自身安装器同构；产物契约（`marketplace.json`/`package.json`/`skills`）见 [shadow-dev-workflow](https://github.com/stack-wuh/shadow-dev-workflow) 的 `scripts/pack.mjs`。
 
 **输出模型**：JSON 是机器契约面——单行格式，成功 `{"ok":true,"command":...,"data":...}`，失败 `{"ok":false,"error":{"code","message"}}`。其出现按环境路由：管道/重定向（agent、脚本）默认输出；**交互终端默认不输出 JSON，只看人用层**，任何环境想显式拿 JSON 用 `--json` 或 `SHADOW_DEV_JSON=1`。退出码不受 JSON 抑制影响。带流程后继的命令，成功结果的 `data.nextStep` 给出下一步建议命令（稳定英文模板，不随语言变化，agent 可直接消费）。
 

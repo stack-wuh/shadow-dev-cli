@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -41,8 +41,11 @@ const server = http.createServer((req, res) => {
   req.on('end', () => {
     appendFileSync(process.env.LOG_FILE, JSON.stringify({ method: req.method, url: req.url, body }) + '\\n')
     const rule = rules.find(item => item.method === req.method && req.url.startsWith(item.path)) || { status: 404, body: { message: 'not found' } }
+    if (rule.rawB64) return (res.writeHead(rule.status || 200, { 'content-type': 'application/octet-stream' }), res.end(Buffer.from(rule.rawB64, 'base64')))
+    let out = rule.body
+    if (rule.template) out = JSON.parse(JSON.stringify(out).replaceAll('{{BASE}}', 'http://127.0.0.1:' + server.address().port))
     res.writeHead(rule.status || 200, { 'content-type': 'application/json' })
-    res.end(JSON.stringify(rule.body))
+    res.end(JSON.stringify(out))
   })
 })
 server.listen(0, '127.0.0.1', () => writeFileSync(process.env.PORT_FILE, String(server.address().port)))
@@ -899,4 +902,143 @@ test('commit execute reuses persisted files and message without re-passing them'
   assert.equal(result.status, 0, result.stdout)
   const message = execFileSync('git', ['log', '-1', '--format=%B'], { cwd: root }).toString()
   assert.match(message, /feat: two files/)
+})
+
+// ---- workflow / bind 域：生态分发（无 brief 域，--plan-hash 是唯一凭证；任意目录可用）----
+
+function buildArtifact(dir, version, { adapters = true, skills = ['shadow-dev-propose', 'shadow-dev-apply'] } = {}) {
+  mkdirSync(join(dir, 'skills'), { recursive: true })
+  writeFileSync(join(dir, 'marketplace.json'), '{"name":"shadow-dev-workflow-local","plugins":[]}')
+  writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'shadow-dev-workflow', version }))
+  for (const s of skills) {
+    mkdirSync(join(dir, 'skills', s), { recursive: true })
+    writeFileSync(join(dir, 'skills', s, 'SKILL.md'), `---\nname: ${s}\n---\n\n# ${s}\n`)
+  }
+  if (adapters) {
+    mkdirSync(join(dir, 'adapters'), { recursive: true })
+    writeFileSync(join(dir, 'adapters', 'claude-code.json'), JSON.stringify({ schema: 'shadow-dev-adapter/v1', host: 'claude-code', tier: 'native', skillsDir: '~/.claude/skills', skillLayout: '{skillsDir}/{skill}/SKILL.md', bind: { strategy: 'copy', marker: 'managed-by: shadow-dev-workflow' } }))
+    writeFileSync(join(dir, 'adapters', 'zcode.json'), JSON.stringify({ schema: 'shadow-dev-adapter/v1', host: 'zcode', tier: 'compatible', skillsDir: '~/.zcode/skills', skillLayout: '{skillsDir}/{skill}/SKILL.md', bind: { strategy: 'copy', marker: 'managed-by: shadow-dev-workflow' } }))
+  }
+  return dir
+}
+
+const wfEnv = root => ({ SHADOW_WORKFLOW_PREFIX: join(root, 'wf-prefix'), SHADOW_WORKFLOW_HOME: join(root, 'home') })
+
+test('help lists workflow and bind ecosystem commands', () => {
+  const help = JSON.parse(run(['--help']).stdout).data.help
+  assert.match(help, /workflow plan\|execute\|rollback\|status\|link\|unlink/)
+  assert.match(help, /bind plan\|execute\|status\|unbind/)
+})
+
+test('workflow plan is stable and execute materializes versioned layout with pointers', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wf-'))
+  const artifact = buildArtifact(join(root, 'artifact'), '6.3.0')
+  const env = wfEnv(root)
+  const first = run(['workflow', 'plan', '--from', artifact, '--json'], root, env)
+  assert.equal(first.status, 0, first.stderr)
+  const hash = JSON.parse(first.stdout).planHash
+  assert.equal(hash, JSON.parse(run(['workflow', 'plan', '--from', artifact, '--json'], root, env).stdout).planHash, 'plan is stable')
+  assert.equal(JSON.parse(first.stdout).data.version, '6.3.0')
+  // 凭证链:execute 缺 --plan-hash exit 2,错误 hash exit 1
+  assert.equal(run(['workflow', 'execute', '--from', artifact, '--confirm', '--json'], root, env).status, 2)
+  assert.equal(run(['workflow', 'execute', '--from', artifact, '--plan-hash', 'wrong', '--confirm', '--json'], root, env).status, 1)
+  const done = run(['workflow', 'execute', '--from', artifact, '--plan-hash', hash, '--confirm', '--json'], root, env)
+  assert.equal(done.status, 0, done.stderr)
+  assert.equal(JSON.parse(done.stdout).data.version, '6.3.0')
+  const prefixDir = join(root, 'wf-prefix')
+  assert.equal(readFileSync(join(prefixDir, 'CURRENT'), 'utf8').trim(), '6.3.0')
+  assert.equal(existsSync(join(prefixDir, 'shadow-dev-workflow-6.3.0', 'skills', 'shadow-dev-propose', 'SKILL.md')), true)
+  // 第二版:PREVIOUS 翻转 + current 稳定入口 + 旧版本保留供回滚
+  const artifact2 = buildArtifact(join(root, 'artifact2'), '6.3.1')
+  const h2 = JSON.parse(run(['workflow', 'plan', '--from', artifact2, '--json'], root, env).stdout).planHash
+  assert.equal(run(['workflow', 'execute', '--from', artifact2, '--plan-hash', h2, '--confirm', '--json'], root, env).status, 0)
+  assert.equal(readFileSync(join(prefixDir, 'CURRENT'), 'utf8').trim(), '6.3.1')
+  assert.equal(readFileSync(join(prefixDir, 'PREVIOUS'), 'utf8').trim(), '6.3.0')
+  assert.equal(existsSync(join(prefixDir, 'shadow-dev-workflow-6.3.0')), true)
+  // 产物失去契约文件 → execute 重算时 ARTIFACT_INVALID(exit 3)
+  rmSync(join(artifact2, 'marketplace.json'))
+  assert.equal(run(['workflow', 'execute', '--from', artifact2, '--plan-hash', h2, '--confirm', '--json'], root, env).status, 3)
+  // rollback 往返 + status 如实反映(且 status 在任意目录可用)
+  const rb = run(['workflow', 'rollback', '--confirm', '--json'], root, env)
+  assert.equal(rb.status, 0, rb.stderr)
+  assert.equal(JSON.parse(rb.stdout).data.current, '6.3.0')
+  const st = JSON.parse(run(['workflow', 'status', '--json'], tmpdir(), env).stdout).data
+  assert.equal(st.current, '6.3.0')
+  assert.equal(st.previous, '6.3.1')
+})
+
+test('workflow link track wins over CURRENT and unlink restores it', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wf-link-'))
+  const installed = buildArtifact(join(root, 'installed'), '6.3.0')
+  const dev = buildArtifact(join(root, 'dev-checkout'), '6.4.0')
+  const env = wfEnv(root)
+  const h = JSON.parse(run(['workflow', 'plan', '--from', installed, '--json'], root, env).stdout).planHash
+  assert.equal(run(['workflow', 'execute', '--from', installed, '--plan-hash', h, '--confirm', '--json'], root, env).status, 0)
+  assert.equal(run(['workflow', 'link', '--dir', dev, '--json'], root, env).status, 2, 'link mutates: needs --confirm')
+  const lk = run(['workflow', 'link', '--dir', dev, '--confirm', '--json'], root, env)
+  assert.equal(lk.status, 0, lk.stderr)
+  const st = JSON.parse(run(['workflow', 'status', '--json'], root, env).stdout).data
+  assert.equal(st.linked, dev)
+  assert.equal(st.resolved, dev, 'LINK wins over CURRENT at resolution')
+  assert.equal(run(['workflow', 'link', '--dir', join(root, 'nope'), '--confirm', '--json'], root, env).status, 3, 'target without artifact contract exits 3')
+  const un = run(['workflow', 'unlink', '--confirm', '--json'], root, env)
+  assert.equal(un.status, 0, un.stderr)
+  assert.equal(JSON.parse(run(['workflow', 'status', '--json'], root, env).stdout).data.linked, null)
+  assert.equal(JSON.parse(run(['workflow', 'status', '--json'], root, env).stdout).data.resolved, join(root, 'wf-prefix', 'shadow-dev-workflow-6.3.0'))
+})
+
+test('workflow release track resolves latest release and downloads the asset via the API', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wf-rel-'))
+  const staging = join(root, 'staging')
+  buildArtifact(join(staging, 'shadow-dev-workflow'), '6.3.1')
+  // tar 必须经 bash -c:与安装器/打包用例同一解析路径(install-distribution 卡约束)
+  execFileSync('bash', ['-c', 'tar -czf "$1" -C "$2" shadow-dev-workflow', 'pack', join(root, 'asset.tgz'), staging])
+  const api = apiStub([
+    { method: 'GET', path: '/repos/stack-wuh/shadow-dev-workflow/releases/latest', template: true, body: { tag_name: 'v6.3.1', assets: [{ name: 'shadow-dev-workflow-v6.3.1.tar.gz', browser_download_url: '{{BASE}}/releases/download/v6.3.1/shadow-dev-workflow-v6.3.1.tar.gz' }] } },
+    { method: 'GET', path: '/releases/download/v6.3.1/shadow-dev-workflow-v6.3.1.tar.gz', rawB64: readFileSync(join(root, 'asset.tgz')).toString('base64') },
+  ])
+  try {
+    const env = { ...wfEnv(root), SHADOW_GITHUB_API_URL: api.url }
+    const h = JSON.parse(run(['workflow', 'plan', '--json'], root, env).stdout).planHash
+    const done = run(['workflow', 'execute', '--plan-hash', h, '--confirm', '--json'], root, env)
+    assert.equal(done.status, 0, done.stderr)
+    assert.equal(JSON.parse(done.stdout).data.version, '6.3.1')
+    assert.equal(existsSync(join(root, 'wf-prefix', 'shadow-dev-workflow-6.3.1', 'marketplace.json')), true)
+  } finally {
+    api.close()
+  }
+})
+
+test('bind copies managed skills with a sidecar, blocks unmanaged targets, unbind removes', () => {
+  const root = mkdtempSync(join(tmpdir(), 'bind-'))
+  const artifact = buildArtifact(join(root, 'artifact'), '6.3.0')
+  const env = wfEnv(root)
+  const lk = run(['workflow', 'link', '--dir', artifact, '--confirm', '--json'], root, env)
+  assert.equal(lk.status, 0, lk.stderr)
+  const skillsDir = join(root, 'home', '.claude', 'skills')
+  mkdirSync(join(skillsDir, 'shadow-dev-apply'), { recursive: true })
+  writeFileSync(join(skillsDir, 'shadow-dev-apply', 'SKILL.md'), 'foreign\n')
+  const plan1 = run(['bind', 'plan', '--host', 'claude-code', '--json'], root, env)
+  assert.equal(plan1.status, 0, plan1.stderr)
+  const p1 = JSON.parse(plan1.stdout)
+  assert.equal(p1.data.hosts[0].entries.find(t => t.skill === 'shadow-dev-apply').blocked, true, 'foreign dir is blocked')
+  assert.equal(run(['bind', 'execute', '--host', 'claude-code', '--plan-hash', p1.planHash, '--confirm', '--json'], root, env).status, 1, 'blocked execute exits 1')
+  rmSync(join(skillsDir, 'shadow-dev-apply'), { recursive: true, force: true })
+  const p2 = JSON.parse(run(['bind', 'plan', '--host', 'claude-code', '--json'], root, env).stdout)
+  const ex = run(['bind', 'execute', '--host', 'claude-code', '--plan-hash', p2.planHash, '--confirm', '--json'], root, env)
+  assert.equal(ex.status, 0, ex.stderr)
+  assert.equal(readFileSync(join(skillsDir, 'shadow-dev-propose', 'SKILL.md'), 'utf8'), `---\nname: shadow-dev-propose\n---\n\n# shadow-dev-propose\n`)
+  const sidecar = JSON.parse(readFileSync(join(skillsDir, '.shadow-dev-workflow.json'), 'utf8'))
+  assert.equal(sidecar.marker, 'managed-by: shadow-dev-workflow')
+  assert.equal(Object.keys(sidecar.skills).length, 2)
+  // status 如实列出全部适配器(present 标记);auto 的存在性过滤只作用于 plan
+  const st = JSON.parse(run(['bind', 'status', '--json'], root, env).stdout).data
+  assert.equal(st.hosts.length, 2)
+  assert.deepEqual(st.hosts.find(h => h.host === 'claude-code').managed, ['shadow-dev-propose', 'shadow-dev-apply'])
+  assert.equal(st.hosts.find(h => h.host === 'zcode').present, false)
+  const ub = run(['bind', 'unbind', '--host', 'claude-code', '--confirm', '--json'], root, env)
+  assert.equal(ub.status, 0, ub.stderr)
+  assert.equal(existsSync(join(skillsDir, 'shadow-dev-propose')), false)
+  assert.equal(existsSync(join(skillsDir, '.shadow-dev-workflow.json')), false)
+  assert.equal(run(['bind', 'unbind', '--host', 'claude-code', '--confirm', '--json'], root, env).status, 1, 'second unbind has nothing to remove')
 })
