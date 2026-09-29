@@ -890,6 +890,33 @@ test('archive execute lands the archive move as a local commit', () => {
   }
 })
 
+test('archive execute survives an untracked change dir and lands the local commit', () => {
+  const root = fixture()
+  const head = () => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root }).toString().trim()
+  // brief 保持未追踪（如 release 文件清单遗漏了 change 目录），旧路径在移动后无物可加
+  updateBrief(root, (d) => {
+    d.status = 'published'
+    d.github = { repository: 'owner/repo', issue: null, issueUrl: null, pullRequest: 9, pullRequestUrl: 'https://github.test/pull/9' }
+    d.review = { conclusion: 'passed', verifiedCommit: head(), verifiedAt: '2026-01-01T00:00:00.000Z' }
+  })
+  const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls/9', body: { number: 9, merged: true, state: 'closed' } }])
+  try {
+    const planned = run(['archive', 'plan', '--name', 'sample', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(planned.status, 0, planned.stderr)
+    const before = head()
+    const result = run(['archive', 'execute', '--name', 'sample', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    const after = head()
+    assert.notEqual(after, before, 'archive must land a local commit')
+    const inspect = run(['repo', 'inspect', '--json'], root)
+    assert.deepEqual(JSON.parse(inspect.stdout).data.changedFiles, [], 'archive commit must leave the tree clean')
+    assert.ok(!existsSync(join(root, 'shadow-docs', 'changes', 'sample')), 'source dir must be gone')
+    assert.ok(existsSync(join(root, 'shadow-docs', 'changes', 'archive', 'sample', 'brief.md')), 'brief must land in archive')
+  } finally {
+    api.close()
+  }
+})
+
 test('commit execute reuses persisted files and message without re-passing them', () => {
   const root = fixture()
   writeFileSync(join(root, 'a.js'), 'a\n')
