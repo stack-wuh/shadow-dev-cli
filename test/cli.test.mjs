@@ -1069,3 +1069,78 @@ test('bind copies managed skills with a sidecar, blocks unmanaged targets, unbin
   assert.equal(existsSync(join(skillsDir, '.shadow-dev-workflow.json')), false)
   assert.equal(run(['bind', 'unbind', '--host', 'claude-code', '--confirm', '--json'], root, env).status, 1, 'second unbind has nothing to remove')
 })
+
+// ---- .shadow-dev/ config layers (20261005-feature-shadow-dev-config) ----
+function withProjectConfig(root, content) {
+  mkdirSync(join(root, '.shadow-dev'), { recursive: true })
+  writeFileSync(join(root, '.shadow-dev', 'config.json'), typeof content === 'string' ? content : JSON.stringify(content))
+}
+function fakeHomeWithConfig(content) {
+  const home = mkdtempSync(join(tmpdir(), 'shadow-home-'))
+  mkdirSync(join(home, '.shadow-dev'), { recursive: true })
+  writeFileSync(join(home, '.shadow-dev', 'config.json'), JSON.stringify(content))
+  return { HOME: home, USERPROFILE: home }
+}
+
+test('config: project .shadow-dev/config.json feeds the stderr language layer', () => {
+  const root = fixture()
+  withProjectConfig(root, { lang: 'en' })
+  // LANG 探测源指向 zh,无 SHADOW_DEV_LANG 无 flag:配置层未实现时 stderr 走 locale 探测渲染中文
+  const r = run(['--help'], root, { LANG: 'zh_CN.UTF-8', SHADOW_DEV_LANG: '', ...fakeHomeWithConfig({}) })
+  assert.match(r.stderr, /shadow-dev commands overview|next/i)
+  assert.doesNotMatch(r.stderr, /命令一览/)
+})
+
+test('config: resolution priority is flag > env > project > user > locale probe', () => {
+  const root = fixture()
+  const env = { LANG: 'en_US.UTF-8', SHADOW_DEV_LANG: '', ...fakeHomeWithConfig({ lang: 'zh' }) }
+  // 1. user config beats locale probe
+  assert.match(run(['--help'], root, env).stderr, /命令一览/)
+  // 2. project config beats user config
+  withProjectConfig(root, { lang: 'en' })
+  assert.match(run(['--help'], root, env).stderr, /shadow-dev commands overview/)
+  // 3. env beats project config
+  assert.match(run(['--help'], root, { ...env, SHADOW_DEV_LANG: 'zh' }).stderr, /命令一览/)
+  // 4. flag beats env
+  assert.match(run(['--help', '--lang', 'en'], root, { ...env, SHADOW_DEV_LANG: 'zh' }).stderr, /shadow-dev commands overview/)
+})
+
+test('config: json key restores the machine surface on TTY', () => {
+  const root = fixture()
+  withProjectConfig(root, { json: true })
+  const r = runTty(['repo', 'inspect'], root, fakeHomeWithConfig({}))
+  assert.equal(JSON.parse(r.stdout).command, 'repo.inspect', 'config json:true must emit the JSON contract even on TTY')
+})
+
+test('config: quiet key silences the human channel from either layer', () => {
+  const root = fixture()
+  withProjectConfig(root, { quiet: true })
+  assert.equal(run(['--help'], root, fakeHomeWithConfig({})).stderr, '')
+  const bare = fixture()
+  const r = run(['--help'], bare, fakeHomeWithConfig({ quiet: true }))
+  assert.equal(r.stderr, '', 'user-level quiet must silence stderr as well')
+  assert.notEqual(r.stdout, '', 'quiet only closes stderr, stdout contract unaffected')
+})
+
+test('config: github.apiBaseUrl applies from config when env is absent', () => {
+  const root = fixture()
+  addOrigin(root)
+  updateBrief(root, (b) => { b.github.repository = 'stub-remote/repo'; b.github.pullRequest = 7 })
+  const stub = apiStub([{ method: 'GET', path: '/repos/stub-remote/repo/pulls/7', body: { number: 7, state: 'open', merged: false, html_url: 'x' } }])
+  try {
+    withProjectConfig(root, { github: { apiBaseUrl: stub.url } })
+    const r = run(['pr', 'inspect', '--name', 'sample', '--json'], root, { GITHUB_TOKEN: 't', SHADOW_GITHUB_API_URL: '', ...fakeHomeWithConfig({}) })
+    assert.equal(r.status, 0, r.stderr)
+    assert.equal(JSON.parse(r.stdout).data.number, 7)
+    assert.ok(stub.requests().some(q => q.url.startsWith('/repos/stub-remote/repo/pulls/7')))
+  } finally { stub.close() }
+})
+
+test('config: malformed config.json fails with CONFIG_INVALID and exit 1', () => {
+  const root = fixture()
+  withProjectConfig(root, '{oops not json')
+  const r = run(['repo', 'inspect', '--json'], root, fakeHomeWithConfig({}))
+  assert.equal(r.status, 1)
+  assert.equal(JSON.parse(r.stdout).error.code, 'CONFIG_INVALID')
+  assert.match(r.stderr, /config\.json/)
+})
