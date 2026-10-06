@@ -1087,7 +1087,7 @@ test('config: project .shadow-dev/config.json feeds the stderr language layer', 
   withProjectConfig(root, { lang: 'en' })
   // LANG 探测源指向 zh,无 SHADOW_DEV_LANG 无 flag:配置层未实现时 stderr 走 locale 探测渲染中文
   const r = run(['--help'], root, { LANG: 'zh_CN.UTF-8', SHADOW_DEV_LANG: '', ...fakeHomeWithConfig({}) })
-  assert.match(r.stderr, /shadow-dev commands overview|next/i)
+  assert.match(r.stderr, /shadow-dev commands \(/)
   assert.doesNotMatch(r.stderr, /命令一览/)
 })
 
@@ -1098,11 +1098,11 @@ test('config: resolution priority is flag > env > project > user > locale probe'
   assert.match(run(['--help'], root, env).stderr, /命令一览/)
   // 2. project config beats user config
   withProjectConfig(root, { lang: 'en' })
-  assert.match(run(['--help'], root, env).stderr, /shadow-dev commands overview/)
+  assert.match(run(['--help'], root, env).stderr, /shadow-dev commands \(/)
   // 3. env beats project config
   assert.match(run(['--help'], root, { ...env, SHADOW_DEV_LANG: 'zh' }).stderr, /命令一览/)
   // 4. flag beats env
-  assert.match(run(['--help', '--lang', 'en'], root, { ...env, SHADOW_DEV_LANG: 'zh' }).stderr, /shadow-dev commands overview/)
+  assert.match(run(['--help', '--lang', 'en'], root, { ...env, SHADOW_DEV_LANG: 'zh' }).stderr, /shadow-dev commands \(/)
 })
 
 test('config: json key restores the machine surface on TTY', () => {
@@ -1143,4 +1143,93 @@ test('config: malformed config.json fails with CONFIG_INVALID and exit 1', () =>
   assert.equal(r.status, 1)
   assert.equal(JSON.parse(r.stdout).error.code, 'CONFIG_INVALID')
   assert.match(r.stderr, /config\.json/)
+})
+
+// ---- worktree domain (20261005-feature-worktree-domain) ----
+function setRating(root, level) {
+  const p = join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')
+  writeFileSync(p, readFileSync(p, 'utf8') + `\n## 复杂度评级\n- **评级:** ${level}\n`)
+}
+const WT_HOME = () => fakeHomeWithConfig({})
+
+test('worktree: execute creates a new worktree with derived branch and writes back the brief', () => {
+  const root = fixture()
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  const planned = run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  assert.equal(planned.status, 0, planned.stderr)
+  const exec = run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
+  assert.equal(exec.status, 0, exec.stderr)
+  const body = JSON.parse(exec.stdout).data
+  assert.equal(body.branch, 'feat/sample')
+  assert.equal(existsSync(join(wt, 'README.md')), true, 'worktree checkout must contain repo files')
+  assert.equal(execFileSync('git', ['-C', wt, 'branch', '--show-current'], { encoding: 'utf8' }).trim(), 'feat/sample')
+  const b = JSON.parse(readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8').match(/---\n([\s\S]*?)\n---/)[1])
+  assert.equal(b.branch, 'feat/sample')
+  assert.equal(b.workflow.worktree, wt)
+  assert.equal(b.status, 'branched')
+})
+
+test('worktree: execute mounts an existing branch', () => {
+  const root = fixture()
+  execFileSync('git', ['branch', 'feat/sample'], { cwd: root })
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  const exec = run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
+  assert.equal(exec.status, 0, exec.stderr)
+  assert.equal(existsSync(join(wt, 'README.md')), true)
+  assert.equal(execFileSync('git', ['-C', wt, 'branch', '--show-current'], { encoding: 'utf8' }).trim(), 'feat/sample')
+})
+
+test('worktree: execute on a taken non-empty path reports WORKTREE_PATH_TAKEN', () => {
+  const root = fixture()
+  const wt = mkdtempSync(join(tmpdir(), 'wt-'))
+  writeFileSync(join(wt, 'busy.txt'), 'occupied\n')
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  const exec = run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
+  assert.equal(exec.status, 1)
+  assert.equal(JSON.parse(exec.stdout).error.code, 'WORKTREE_PATH_TAKEN')
+})
+
+test('worktree: remove deletes a clean worktree and clears the brief field', () => {
+  const root = fixture()
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  assert.equal(run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME()).status, 0)
+  const planned = run(['worktree', 'remove', 'plan', '--name', 'sample', '--json'], root, WT_HOME())
+  assert.equal(planned.status, 0, planned.stderr)
+  const removed = run(['worktree', 'remove', 'execute', '--name', 'sample', '--confirm', '--json'], root, WT_HOME())
+  assert.equal(removed.status, 0, removed.stderr)
+  assert.equal(existsSync(wt), false)
+  const b = JSON.parse(readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8').match(/---\n([\s\S]*?)\n---/)[1])
+  assert.equal(b.workflow.worktree, null)
+})
+
+test('worktree: remove refuses a dirty worktree with WORKTREE_DIRTY', () => {
+  const root = fixture()
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
+  writeFileSync(join(wt, 'dirt.txt'), 'dirty\n')
+  run(['worktree', 'remove', 'plan', '--name', 'sample', '--json'], root, WT_HOME())
+  const removed = run(['worktree', 'remove', 'execute', '--name', 'sample', '--confirm', '--json'], root, WT_HOME())
+  assert.equal(removed.status, 1)
+  assert.equal(JSON.parse(removed.stdout).error.code, 'WORKTREE_DIRTY')
+  assert.equal(existsSync(wt), true)
+})
+
+test('worktree: inspect recommends by rating and reports occupancy', () => {
+  const root = fixture()
+  setRating(root, 'L')
+  const bare = JSON.parse(run(['worktree', 'inspect', '--name', 'sample', '--json'], root, WT_HOME()).stdout).data
+  assert.equal(bare.recommendation, 'create')
+  assert.match(bare.nextStep, /worktree plan --name sample --path/)
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
+  const mine = JSON.parse(run(['worktree', 'inspect', '--name', 'sample', '--json'], root, WT_HOME()).stdout).data
+  assert.equal(mine.recommendation, 'reuse')
+  const self = mine.worktrees.find(w => w.path === realpathSync(wt))
+  assert.equal(self.branch, 'feat/sample')
+  assert.equal(self.clean, true)
+  assert.equal(self.occupiedBy, 'sample')
 })
