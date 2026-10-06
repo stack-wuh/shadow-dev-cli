@@ -1087,7 +1087,7 @@ test('config: project .shadow-dev/config.json feeds the stderr language layer', 
   withProjectConfig(root, { lang: 'en' })
   // LANG 探测源指向 zh,无 SHADOW_DEV_LANG 无 flag:配置层未实现时 stderr 走 locale 探测渲染中文
   const r = run(['--help'], root, { LANG: 'zh_CN.UTF-8', SHADOW_DEV_LANG: '', ...fakeHomeWithConfig({}) })
-  assert.match(r.stderr, /shadow-dev commands overview|next/i)
+  assert.match(r.stderr, /shadow-dev commands \(/)
   assert.doesNotMatch(r.stderr, /命令一览/)
 })
 
@@ -1098,11 +1098,11 @@ test('config: resolution priority is flag > env > project > user > locale probe'
   assert.match(run(['--help'], root, env).stderr, /命令一览/)
   // 2. project config beats user config
   withProjectConfig(root, { lang: 'en' })
-  assert.match(run(['--help'], root, env).stderr, /shadow-dev commands overview/)
+  assert.match(run(['--help'], root, env).stderr, /shadow-dev commands \(/)
   // 3. env beats project config
   assert.match(run(['--help'], root, { ...env, SHADOW_DEV_LANG: 'zh' }).stderr, /命令一览/)
   // 4. flag beats env
-  assert.match(run(['--help', '--lang', 'en'], root, { ...env, SHADOW_DEV_LANG: 'zh' }).stderr, /shadow-dev commands overview/)
+  assert.match(run(['--help', '--lang', 'en'], root, { ...env, SHADOW_DEV_LANG: 'zh' }).stderr, /shadow-dev commands \(/)
 })
 
 test('config: json key restores the machine surface on TTY', () => {
