@@ -4,7 +4,7 @@
   "name": "20261005-feature-worktree-domain",
   "type": "feature",
   "scope": "lib,cli",
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "feature/20261005-feature-shadow-dev-config",
   "branch": "feature/20261005-feature-worktree-domain",
   "files": [
@@ -20,8 +20,8 @@
     "repository": null,
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 37,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/37"
   },
   "review": {
     "conclusion": "passed",
@@ -30,8 +30,8 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
-    "planHash": "f9b91e92faaab76970cfcd1f6017e6ed78aa7d16deeaa1ce542cf45e3b34577d",
+    "checkpoint": "pr:37",
+    "planHash": "d7e64f719aa98c3c8c71791cd6382ff600cc3192f638a9944b025645c12ead21",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -56,6 +56,13 @@
       "message": "feat(worktree): git worktree 域——inspect 按评级建议、plan/execute 创建挂载、remove 脏拒绝回收;路径 realpath 归一",
       "title": "feat(worktree): 并行变更独立工作区域（inspect/create/remove）",
       "body": ""
+    },
+    "commit": {
+      "files": [
+        "lib/domains/worktree.mjs",
+        "shadow-docs/changes/20261005-feature-worktree-domain/brief.md"
+      ],
+      "message": "fix(worktree): porcelain 解析容 CRLF 行尾——Windows path 尾随\\r 致 existsSync 恒 false,inspect reuse 误判"
     }
   },
   "knowledge": {
@@ -114,7 +121,7 @@ shadow 工作流是串行的单 checkout 模型：L 级变更与 hotfix 并行�
 
 - 实际耗时: 约 90 分钟（含本机 runner 反复空转排查与 CI 断言缺陷定位）
 - 验证: TDD 红灯 6/6 有真实输出后实现；手动 runtime 全链路观察通过——inspect 三态（create→reuse 翻转、occupiedBy=demo、clean 标记）、create（分支派生+目录生成+brief 回写）、挂载既有分支、非空 path WORKTREE_PATH_TAKEN、脏 WORKTREE_DIRTY 拒绝、干净回收清字段；路径归一含 realpath（macOS /var vs /private/var）。本机 node --test/直跑反复 0% CPU 挂起，转绿权威判据=CI：本 PR 以 config+worktree 用例全绿为准；main 基线既有 windows bind/workflow tar 失败不计入本变更。附带：config 语言断言措辞误写在 PR #35 修正（commit 2ce75c2，内容同步于本分支测试文件）
-- 验证: —
+- 验证: TDD 红灯 6/6 后实现；CI 两轮反馈真缺陷并修复——① realpathSync import 缺失（stash 时序）② Windows porcelain CRLF：path 尾挂 \r 致 existsSync 假、hasMine 恒 false（#38 全平台复现，split(/\r?\n/)+trim 修复；同轮加 canon 归一 MSYS/正斜杠/盘符大小写）。macOS 手动全链路冒烟通过。转绿以 #39→#38 CI 为准
 
 ## 知识评估
 
