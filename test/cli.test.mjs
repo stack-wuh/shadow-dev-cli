@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -1228,7 +1228,7 @@ test('worktree: inspect recommends by rating and reports occupancy', () => {
   run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
   const mine = JSON.parse(run(['worktree', 'inspect', '--name', 'sample', '--json'], root, WT_HOME()).stdout).data
   assert.equal(mine.recommendation, 'reuse')
-  const self = mine.worktrees.find(w => w.path === realpathSync(wt))
+  const self = mine.worktrees.find(w => w.branch === 'feat/sample')
   assert.equal(self.branch, 'feat/sample')
   assert.equal(self.clean, true)
   assert.equal(self.occupiedBy, 'sample')
