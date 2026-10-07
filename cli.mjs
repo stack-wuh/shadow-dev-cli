@@ -6,6 +6,7 @@ import { root } from './lib/git.mjs'
 import { brief, write } from './lib/brief.mjs'
 import { confirm, name } from './lib/input.mjs'
 import { err } from './lib/errors.mjs'
+import { checkConfig } from './lib/config.mjs'
 import { resolveLang } from './lib/i18n.mjs'
 import { HELP, COMMANDS } from './lib/commands.mjs'
 import { VERSION } from './lib/version.mjs'
@@ -93,6 +94,7 @@ let p = [], o = {}, L = 'zh'
 try {
   const parsed = args(process.argv.slice(2))
   p = parsed.p; o = parsed.o
+  checkConfig()
   L = resolveLang(o)
   const helpMode = !p.length || p.includes('--help') || p[0] === 'help'
   // 元命令 version 与 help 同类：不要求 git 仓库，在 root() 之前拦截；--version 先于 help 判定

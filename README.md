@@ -193,6 +193,26 @@ shadow-dev issue execute --name <名称> --confirm
 
 ---
 
+## 配置文件（.shadow-dev/）
+
+偏好可持久化到两层 `config.json`，生效优先级：**命令行 flag > 环境变量 > 项目 config > 用户 config > 内置默认**。
+
+- 项目级：`<repo>/.shadow-dev/config.json`（从 cwd 向上第一个命中，提交进仓库团队共享）
+- 用户级：`~/.shadow-dev/config.json`（个人默认，不提交）
+
+v1 键面（逐键生效，两层各供各的键；未知键静默忽略）：
+
+```json
+{
+  "lang": "zh",
+  "quiet": false,
+  "json": false,
+  "github": { "apiBaseUrl": "https://api.github.com", "timeoutMs": 15000 }
+}
+```
+
+JSON 损坏或键类型不符报 `CONFIG_INVALID`（退出码 1）。**token 只走环境变量**，config 文件不承载 secrets。
+
 ## 环境变量
 
 | 变量 | 默认 | 说明 |
