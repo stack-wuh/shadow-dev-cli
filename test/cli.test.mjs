@@ -1226,9 +1226,10 @@ test('worktree: inspect recommends by rating and reports occupancy', () => {
   const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
   const pl = run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
   const ex = run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
-  const br = JSON.parse(readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8').match(/---\n([\s\S]*?)\n---/)[1])
+  const brRaw = readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8')
+  const br = JSON.parse(brRaw.match(/---\n([\s\S]*?)\n---/)[1])
   const mine = JSON.parse(run(['worktree', 'inspect', '--name', 'sample', '--json'], root, WT_HOME()).stdout).data
-  assert.equal(mine.recommendation, 'reuse', 'DIAG2 ' + JSON.stringify({ plSt: pl.status, pl: pl.stdout.trim().slice(0, 200), exSt: ex.status, ex: ex.stdout.trim().slice(0, 220), wf: br.workflow, branch: br.branch, wtGiven: wt }))
+  assert.equal(mine.recommendation, 'reuse', 'DIAG3 ' + JSON.stringify({ rawFm: brRaw.slice(0, 700), exFull: ex.stdout.trim(), wtGiven: wt, rootGiven: root }))
   const self = mine.worktrees.find(w => w.branch === 'feat/sample')
   assert.equal(self.branch, 'feat/sample')
   assert.equal(self.clean, true)
