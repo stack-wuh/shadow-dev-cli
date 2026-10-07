@@ -1227,7 +1227,7 @@ test('worktree: inspect recommends by rating and reports occupancy', () => {
   run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
   run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
   const mine = JSON.parse(run(['worktree', 'inspect', '--name', 'sample', '--json'], root, WT_HOME()).stdout).data
-  assert.equal(mine.recommendation, 'reuse')
+  assert.equal(mine.recommendation, 'reuse', 'DIAG '+JSON.stringify({ step: mine.nextStep, wts: mine.worktrees.map(w => ({ path: w.path, branch: w.branch, clean: w.clean })) }))
   const self = mine.worktrees.find(w => w.branch === 'feat/sample')
   assert.equal(self.branch, 'feat/sample')
   assert.equal(self.clean, true)
