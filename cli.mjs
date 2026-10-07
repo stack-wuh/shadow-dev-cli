@@ -22,12 +22,13 @@ import * as archive from './lib/domains/archive.mjs'
 import * as issue from './lib/domains/issue.mjs'
 import * as change from './lib/domains/change.mjs'
 import * as task from './lib/domains/task.mjs'
+import * as worktree from './lib/domains/worktree.mjs'
 import * as inspect from './lib/domains/inspect.mjs'
 import * as index from './lib/domains/index.mjs'
 import * as workflow from './lib/domains/workflow.mjs'
 import * as bind from './lib/domains/bind.mjs'
 
-const DOMAINS = { branch, sync, review, commit, publish, release, reconcile, archive, issue, index }
+const DOMAINS = { branch, sync, review, commit, publish, release, reconcile, archive, issue, index, worktree }
 
 // execute 与 plan 用同一 planData 重算并对比 hash。带 --name 的域以 brief 里的 planHash 为前置凭证；
 // 无 brief 的域（如 index rebuild）--plan-hash 是唯一凭证
@@ -81,10 +82,13 @@ async function handle(r, p, o) {
   // 生态分发域：宿主无关、不要求 git 仓库，r 允许为 null
   if (d === 'workflow') return await workflow.handle(a, o)
   if (d === 'bind') return await bind.handle(a, o)
+  if (d === 'worktree' && a === 'inspect') return { ok: true, command: 'worktree.inspect', data: worktree.state(r, o) }
   if (Object.hasOwn(DOMAINS, d)) {
-    const verb = a === 'rebuild' ? s : a, c = a === 'rebuild' ? `${d}.rebuild` : d
-    if (verb === 'plan') return await planDomain(c, DOMAINS[d], r, o)
-    if (verb === 'execute') return { ok: true, command: `${c}.execute`, data: await executeDomain(c, DOMAINS[d], r, o) }
+    const nested = a === 'rebuild' || (d === 'worktree' && a === 'remove')
+    const verb = nested ? s : a, c = nested ? `${d}.${a}` : d
+    const mod = d === 'worktree' && a === 'remove' ? { planData: worktree.removePlanData, present: worktree.removePresent, execute: worktree.removeExecute } : DOMAINS[d]
+    if (verb === 'plan') return await planDomain(c, mod, r, o)
+    if (verb === 'execute') return { ok: true, command: `${c}.execute`, data: await executeDomain(c, mod, r, o) }
   }
   throw err('UNKNOWN_COMMAND', `unsupported command: ${p.join(' ')}`)
 }
