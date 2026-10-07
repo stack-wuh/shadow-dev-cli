@@ -147,6 +147,9 @@ shadow-dev issue execute --name <名称> --confirm
 | `branch plan \| execute` | 从基线分支建功能分支 |
 | `sync plan \| execute` | fast-forward 同步上游（分叉时拒绝自动合并） |
 | `conflict inspect` | 检查活动变更间的文件重叠 |
+| `worktree inspect` | 列出 git worktree（分支/脏净/归属），按 brief 复杂度评级给并行建议 |
+| `worktree plan \| execute` | 为变更创建独立 worktree（无分支则随 add 派生；不切换当前工作区） |
+| `worktree remove plan \| execute` | 回收 brief 记录的 worktree（脏工作区拒绝，不隐式删除） |
 | `task list \| set` | 查看 / 勾选 brief 任务清单 |
 | `review plan \| execute` | 写入审查结论与知识评估（任务未全勾选拒绝 passed） |
 | `commit plan \| execute` | 按显式文件列表提交（参数持久化,execute 可免重传） |
@@ -157,6 +160,14 @@ shadow-dev issue execute --name <名称> --confirm
 | `archive plan \| execute` | 归档已合并变更并重建 INDEX（要求 review passed 且 PR 已合并） |
 | `issue plan \| execute` | 由 brief 确定性渲染并创建 GitHub issue |
 | `index rebuild plan \| execute` | 重建变更索引（无 brief 域） |
+
+### 并行工作区（worktree）
+
+多变更并行（尤其 L 级与 hotfix 并存）不必轮流切分支——每个变更可拥有独立 git worktree：
+
+- `worktree inspect --name <change>` 只读检视 worktree 清单与归属，按 brief 复杂度评级给建议：L 级且无自己的 workspace → `create`；`workflow.worktree` 已存在 → `reuse`。
+- `worktree plan --name <change> --path <dir>` → `worktree execute --name <change> --path <dir> --confirm`：创建（brief 无分支则 `worktree add -b <type>/<name>` 派生）或挂载既有分支，回写 `brief.branch` 与 `workflow.worktree`，**不动当前工作区**。
+- `worktree remove plan | execute` 回收 brief 记录的 workspace；有未提交改动时 `WORKTREE_DIRTY` 响亮拒绝，不做隐式删除。
 
 ### 辅助
 
