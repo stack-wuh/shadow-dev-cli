@@ -4,7 +4,7 @@
   "name": "20261008-fix-ci-bind-tar-harness",
   "type": "fix",
   "scope": "lib,test",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20261008-fix-ci-bind-tar-harness",
   "files": [
@@ -17,18 +17,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 43,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/43",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 44,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/44"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "0b5235a3e39e0113625e91cffc6f031bf2d0013f",
-    "verifiedAt": "2026-10-08T04:11:11.436Z"
+    "verifiedCommit": "d6f2a96ef27f3e117eb8ac32b27362b791e5aff5",
+    "verifiedAt": "2026-10-08T04:15:45.156Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:43",
-    "planHash": "d6cc9b1053621346e2112bd19729854d38f8ae7e6539900201a5511e5821d6d4",
+    "checkpoint": "merged-pr:44",
+    "planHash": "72b1201da226232350542a7901d03894d81eceea31be027a67cb78cb9f8e1282",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
