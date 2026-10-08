@@ -11,9 +11,10 @@ source:
   - changes/20260918-fix-installer-ci-cmd-assert/brief.md
   - changes/20260918-fix-cross-platform-ci/brief.md
   - changes/archive/20260925-feature-workflow-domain/brief.md
+  - changes/20261008-fix-ci-bind-tar-harness/brief.md
   - shadow-dev-workflow 仓 changes/archive/20260925-feature-pack-release/brief.md（跨仓产物契约）
   - shadow-dev-workflow 仓 changes/archive/20260925-fix-pack-adapters/brief.md（跨仓产物契约）
-verified: 2026-09-25
+verified: 2026-10-08
 ---
 
 # shadow-dev CLI 安装与分发模型
@@ -34,7 +35,7 @@ verified: 2026-09-25
 - bind 绝不改 SKILL.md 字节：托管凭 sidecar，非托管同名目录在 plan 标记 blocked、execute 拒绝（exit 1），unbind 按 sidecar 逆操作；`readdirSync` 产出的 entries/sidecar keys 必须排序，保证 planHash 与 sidecar 字节确定。
 - 大小写不敏感文件系统（macOS/Windows 默认）上，指针文件与入口软链命名不得仅大小写不同——`CURRENT` 指针文件与 `current` 软链同路径互删（已删软链，统一运行时解析 resolvedRoot）。
 - **release 不作为 brief task**：review execute 的机械门禁要求全部任务勾选，而发布天然在 review 之后——把发布写成 task 会造成死锁（20260925-feature-pack-release 教训，发布放合并后/独立环节）。
-- 测试需要打包 tar 时**必须经 `bash -c 'tar ...'` 执行**（与安装器本体同一解析路径）：node 直接 `spawnSync('tar')` 在 Windows runner 绑到 System32 bsdtar，读不了 `toUnix()` 产出的 MSYS `/tmp` 路径，导致全部安装器用例在 windows CI 恒红。
+- 凡需打包/解包 tar **必须经 `bash -c 'tar ...'` 执行**（与安装器本体同一解析路径），Windows 上的路径参数先 `cygpath -u` 归 POSIX：node 直接 spawn `tar` 的结果随 PATH 命中对象漂移——Windows runner 绑 System32 bsdtar 读不了 `toUnix()` 产出的 MSYS 路径（历史：安装器用例 windows CI 恒红），Git Bash msys tar 抢跑时反过来把 `C:\` 形态误读为"远程主机:路径"（2026-10-08 本机复现：workflow 域两处解包炸而 CI bsdtar 掩盖）。约束覆盖测试文件与 `lib/domains/workflow.mjs` 的 `untar()` 生产链路两处。
 
 ## 适用边界
 

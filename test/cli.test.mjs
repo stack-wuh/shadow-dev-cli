@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { platform, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -16,6 +16,12 @@ function run(args, cwd = process.cwd(), env = {}) {
     env: { ...process.env, ...env },
   })
 }
+
+// Git Bash 的 tar/bash 会把 "C:\..." 误读为“远程主机:路径”；传给子进程前统一转正斜杠 POSIX 形态（与 install.test.mjs 同法）
+const toUnix = platform() === 'win32' ? (p) => {
+  const r = spawnSync('cygpath', ['-u', p], { encoding: 'utf8' })
+  return r.status === 0 ? r.stdout.trim() : p
+} : (p) => p
 
 function updateBrief(root, update) {
   const path = join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')
@@ -1019,7 +1025,7 @@ test('workflow release track resolves latest release and downloads the asset via
   const staging = join(root, 'staging')
   buildArtifact(join(staging, 'shadow-dev-workflow'), '6.3.1')
   // tar 必须经 bash -c:与安装器/打包用例同一解析路径(install-distribution 卡约束)
-  execFileSync('bash', ['-c', 'tar -czf "$1" -C "$2" shadow-dev-workflow', 'pack', join(root, 'asset.tgz'), staging])
+  execFileSync('bash', ['-c', 'tar -czf "$1" -C "$2" shadow-dev-workflow', 'pack', toUnix(join(root, 'asset.tgz')), toUnix(staging)])
   const api = apiStub([
     { method: 'GET', path: '/repos/stack-wuh/shadow-dev-workflow/releases/latest', template: true, body: { tag_name: 'v6.3.1', assets: [{ name: 'shadow-dev-workflow-v6.3.1.tar.gz', browser_download_url: '{{BASE}}/releases/download/v6.3.1/shadow-dev-workflow-v6.3.1.tar.gz' }] } },
     { method: 'GET', path: '/releases/download/v6.3.1/shadow-dev-workflow-v6.3.1.tar.gz', rawB64: readFileSync(join(root, 'asset.tgz')).toString('base64') },
@@ -1061,7 +1067,8 @@ test('bind copies managed skills with a sidecar, blocks unmanaged targets, unbin
   // status 如实列出全部适配器(present 标记);auto 的存在性过滤只作用于 plan
   const st = JSON.parse(run(['bind', 'status', '--json'], root, env).stdout).data
   assert.equal(st.hosts.length, 2)
-  assert.deepEqual(st.hosts.find(h => h.host === 'claude-code').managed, ['shadow-dev-propose', 'shadow-dev-apply'])
+  // managed = sidecar 键序 = plan entries 的稳定字典序（产品契约:确定性输出,与 readdir/创建序无关）
+  assert.deepEqual(st.hosts.find(h => h.host === 'claude-code').managed, ['shadow-dev-apply', 'shadow-dev-propose'])
   assert.equal(st.hosts.find(h => h.host === 'zcode').present, false)
   const ub = run(['bind', 'unbind', '--host', 'claude-code', '--confirm', '--json'], root, env)
   assert.equal(ub.status, 0, ub.stderr)
