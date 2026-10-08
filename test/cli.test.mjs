@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { platform, tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
@@ -948,10 +948,10 @@ test('commit execute reuses persisted files and message without re-passing them'
 
 // ---- workflow / bind 域：生态分发（无 brief 域，--plan-hash 是唯一凭证；任意目录可用）----
 
-function buildArtifact(dir, version, { adapters = true, skills = ['shadow-dev-propose', 'shadow-dev-apply'] } = {}) {
+function buildArtifact(dir, version, { adapters = true, skills = ['shadow-dev-propose', 'shadow-dev-apply'], requires = null } = {}) {
   mkdirSync(join(dir, 'skills'), { recursive: true })
   writeFileSync(join(dir, 'marketplace.json'), '{"name":"shadow-dev-workflow-local","plugins":[]}')
-  writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'shadow-dev-workflow', version }))
+  writeFileSync(join(dir, 'package.json'), JSON.stringify(requires ? { name: 'shadow-dev-workflow', version, requiresCommands: requires } : { name: 'shadow-dev-workflow', version }))
   for (const s of skills) {
     mkdirSync(join(dir, 'skills', s), { recursive: true })
     writeFileSync(join(dir, 'skills', s, 'SKILL.md'), `---\nname: ${s}\n---\n\n# ${s}\n`)
@@ -1552,4 +1552,88 @@ test('zero-dirty: archive final state (status archived + INDEX entry) is what re
     assert.match(onRemote, /"checkpoint": "merged-pr:9"/)
     assert.match(execFileSync('git', ['show', 'main:shadow-docs/INDEX.md'], { cwd: remote, encoding: 'utf8' }), /archive\/sample\/brief\.md/)
   } finally { api.close() }
+})
+
+// ---- 产物能力契约（20261008-feature-artifact-capability-contract）----
+// 分发权威反转给 CLI 后，「内容要求未发布命令」不再有静态 pin 兜底：
+// 产物用 requiresCommands 自声明需求，CLI 在物化落盘前拿自身 COMMANDS 目录断言。
+
+test('workflow capability contract: execute refuses an artifact requiring commands this CLI lacks', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wf-cap-'))
+  const env = wfEnv(root)
+  const prefixDir = join(root, 'wf-prefix')
+  // 现场：先装一个兼容版本，拒绝路径必须证明已有指针不动
+  const good = buildArtifact(join(root, 'good'), '6.3.0')
+  const hg = JSON.parse(run(['workflow', 'plan', '--from', good, '--json'], root, env).stdout).planHash
+  assert.equal(run(['workflow', 'execute', '--from', good, '--plan-hash', hg, '--confirm', '--json'], root, env).status, 0)
+  const currentBefore = readFileSync(join(prefixDir, 'CURRENT'), 'utf8')
+
+  // 合成命令键：断言不依赖任何具体发布版本——目录里永远不该有这两个键
+  const bad = buildArtifact(join(root, 'bad'), '9.9.9', { requires: ['nope.does-not-exist', 'zzz.future.command'] })
+  const planned = run(['workflow', 'plan', '--from', bad, '--json'], root, env)
+  assert.equal(planned.status, 0, `plan previews incompatibility without failing: ${planned.stderr}`)
+  assert.deepEqual(JSON.parse(planned.stdout).data.missingCommands, ['nope.does-not-exist', 'zzz.future.command'])
+
+  const hb = JSON.parse(planned.stdout).planHash
+  const refused = run(['workflow', 'execute', '--from', bad, '--plan-hash', hb, '--confirm', '--json'], root, env)
+  assert.equal(refused.status, 1, refused.stdout)
+  assert.equal(JSON.parse(refused.stdout).error.code, 'ARTIFACT_INCOMPATIBLE')
+  assert.match(JSON.parse(refused.stdout).error.message, /zzz\.future\.command/)
+  assert.equal(readFileSync(join(prefixDir, 'CURRENT'), 'utf8'), currentBefore, 'CURRENT untouched on refusal')
+  assert.equal(existsSync(join(prefixDir, 'shadow-dev-workflow-9.9.9')), false, 'no half-materialized version dir')
+  // 人用层：拒绝与升级指引走 stderr，语言显式钉 zh（CI runner locale 会改渲染语言）
+  const human = run(['workflow', 'execute', '--from', bad, '--plan-hash', hb, '--confirm', '--lang', 'zh'], root, env)
+  assert.match(human.stderr, /ARTIFACT_INCOMPATIBLE/)
+
+  // 能力齐备的产物必须放行（放在拒绝路径断言之后，避免污染「指针不动」的现场）
+  const okArtifact = buildArtifact(join(root, 'ok'), '7.0.0', { requires: ['worktree.inspect'] })
+  const hOk = JSON.parse(run(['workflow', 'plan', '--from', okArtifact, '--json'], root, env).stdout).planHash
+  assert.equal(run(['workflow', 'execute', '--from', okArtifact, '--plan-hash', hOk, '--confirm', '--json'], root, env).status, 0)
+  const st = JSON.parse(run(['workflow', 'status', '--json'], root, env).stdout).data
+  assert.equal(st.artifactVersion, '7.0.0')
+  assert.deepEqual(st.missingCommands, [])
+})
+
+test('workflow capability contract: artifacts without requiresCommands stay installable (default-compatible)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wf-cap-def-'))
+  const env = wfEnv(root)
+  const artifact = buildArtifact(join(root, 'artifact'), '6.4.0')
+  const hash = JSON.parse(run(['workflow', 'plan', '--from', artifact, '--json'], root, env).stdout).planHash
+  assert.equal(run(['workflow', 'execute', '--from', artifact, '--plan-hash', hash, '--confirm', '--json'], root, env).status, 0)
+  assert.equal(readFileSync(join(root, 'wf-prefix', 'CURRENT'), 'utf8').trim(), '6.4.0')
+})
+
+test('workflow capability contract: status projects artifactVersion, cliVersion and missingCommands', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wf-cap-status-'))
+  const env = wfEnv(root)
+  const cliVersion = JSON.parse(readFileSync(join(dirname(CLI), 'package.json'), 'utf8')).version
+  const empty = JSON.parse(run(['workflow', 'status', '--json'], root, env).stdout).data
+  assert.equal(empty.artifactVersion, null, 'nothing installed => no artifact version')
+  assert.deepEqual(empty.missingCommands, [])
+  assert.equal(empty.cliVersion, cliVersion)
+
+  const artifact = buildArtifact(join(root, 'artifact'), '6.5.0')
+  const hash = JSON.parse(run(['workflow', 'plan', '--from', artifact, '--json'], root, env).stdout).planHash
+  assert.equal(run(['workflow', 'execute', '--from', artifact, '--plan-hash', hash, '--confirm', '--json'], root, env).status, 0)
+  const installed = JSON.parse(run(['workflow', 'status', '--json'], root, env).stdout).data
+  assert.equal(installed.artifactVersion, '6.5.0')
+  assert.deepEqual(installed.missingCommands, [])
+
+  // link 轨同样是能力断言的观测面：直通一个要求缺失命令的产物，status 必须报出来
+  const dev = buildArtifact(join(root, 'dev'), '9.9.9', { requires: ['nope.missing'] })
+  assert.equal(run(['workflow', 'link', '--dir', dev, '--confirm', '--json'], root, env).status, 1, 'link refuses')
+  const linked = JSON.parse(run(['workflow', 'status', '--json'], root, env).stdout).data
+  assert.equal(linked.artifactVersion, '6.5.0', 'CURRENT still resolves')
+  assert.deepEqual(linked.missingCommands, [])
+})
+
+test('workflow capability contract: link refuses an artifact requiring commands the CLI lacks', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wf-cap-link-'))
+  const env = wfEnv(root)
+  const prefixDir = join(root, 'wf-prefix')
+  const dev = buildArtifact(join(root, 'dev'), '9.9.9', { requires: ['nope.does-not-exist'] })
+  const refused = run(['workflow', 'link', '--dir', dev, '--confirm', '--json'], root, env)
+  assert.equal(refused.status, 1, refused.stdout)
+  assert.equal(JSON.parse(refused.stdout).error.code, 'ARTIFACT_INCOMPATIBLE')
+  assert.equal(existsSync(join(prefixDir, 'LINK')), false, 'LINK is not written on refusal')
 })

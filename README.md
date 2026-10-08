@@ -125,6 +125,12 @@ shadow-dev issue execute --name <名称> --confirm
 | `bind status` | 绑定状态 | 各宿主在场情况与托管技能清单 |
 | `bind unbind` | 解绑 | `--host <名> --confirm`；按 sidecar 精确移除 |
 
+产物能力契约（与 workflow 仓 `pack.mjs` 清单同源登记）：产物 `package.json` 可声明 `requiresCommands: ["worktree.inspect", …]`，列出内容层依赖的命令键。CLI 在 **任何落盘动作之前** 拿自身命令目录比对：
+
+- 缺失即 `ARTIFACT_INCOMPATIBLE`（退出码 1），`CURRENT`/`PREVIOUS`/`LINK` 一律不动,不留半成品版本目录；`workflow link` 直通轨同一断言。
+- 未声明 = 兼容（旧产物零破坏）；`workflow plan` 对可离线解析的来源（`--from` 目录/tarball）透出 `missingCommands` 预览,下载轨为 `null`。
+- `workflow status` 回 `artifactVersion`/`cliVersion`/`missingCommands` 三元组,供引导页与巡检读一个信号即可判断「内容是否比 CLI 新」。
+
 安装布局：
 
 ```
@@ -203,7 +209,7 @@ shadow-dev issue execute --name <名称> --confirm
 | 码 | 含义 | 典型错误码 |
 |----|------|-----------|
 | 0 | 成功 | — |
-| 1 | 输入/校验错误 | `PLAN_HASH_INVALID`、`BRIEF_NOT_FOUND`、`NAME_REQUIRED`、`TASKS_NOT_COMPLETE`、`REVIEW_NOT_PASSED`、`PR_NOT_MERGED`、`ARTIFACT_INVALID`、`UNMANAGED_TARGET`、`BLOG_FILE_NOT_FOUND`、`BLOG_TITLE_REQUIRED` |
+| 1 | 输入/校验错误 | `PLAN_HASH_INVALID`、`BRIEF_NOT_FOUND`、`NAME_REQUIRED`、`TASKS_NOT_COMPLETE`、`REVIEW_NOT_PASSED`、`PR_NOT_MERGED`、`ARTIFACT_INVALID`、`ARTIFACT_INCOMPATIBLE`、`UNMANAGED_TARGET`、`BLOG_FILE_NOT_FOUND`、`BLOG_TITLE_REQUIRED` |
 | 2 | 缺少确认或凭证 | `CONFIRMATION_REQUIRED`、`PLAN_HASH_REQUIRED`、`BLOG_FILE_REQUIRED` |
 | 3 | 外部系统失败 | `GITHUB_TOKEN_REQUIRED`、`GITHUB_API_ERROR`、`API_TIMEOUT`、`GIT_PUSH_FAILED`、`DOWNLOAD_FAILED`、`RELEASE_NOT_FOUND` |
 | 4 | 不支持的操作 | `UNSUPPORTED_OPERATION`（如 `git add .`、绝对路径） |
@@ -282,6 +288,7 @@ bash scripts/install-cli.sh unlink                     # 移除 CLI 的 LINK
 | `GITHUB_TOKEN_REQUIRED` | `export GH_TOKEN="$(gh auth token)"` |
 | `WORKFLOW_NOT_INSTALLED` | 先跑 workflow plan + execute,或直接跑 bootstrap |
 | `ADAPTERS_MISSING` | workflow 产物过旧（< v6.3.1）,更新产物 |
+| `ARTIFACT_INCOMPATIBLE` | 产物声明的 `requiresCommands` 当前 CLI 不提供（内容比 CLI 新）;先升级 CLI 再重新 `workflow plan`——拒绝发生在落盘前,`CURRENT`/`PREVIOUS`/`LINK` 与已装版本都不会被改动 |
 | `UNMANAGED_TARGET` | 宿主目录存在同名非托管技能;手动移除后重试（绝不静默覆盖） |
 | `DIRTY_WORKTREE` | 工作区有未提交业务改动,先 commit 或还原 |
 | 插件 hook 提示「未能就位」 | 离线导致;联网后重开会话,或手动 `bash scripts/install-cli.sh install` |
