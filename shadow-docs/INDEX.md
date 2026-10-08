@@ -18,6 +18,6 @@
 | 20260918-fix-installer-ci-cmd-assert | ✅ 完成 | shadow-docs/changes/archive/20260918-fix-installer-ci-cmd-assert/brief.md |
 | 20260925-chore-bootstrap-v14 | ✅ 完成 | shadow-docs/changes/archive/20260925-chore-bootstrap-v14/brief.md |
 | 20260925-feature-workflow-domain | ✅ 完成 | shadow-docs/changes/archive/20260925-feature-workflow-domain/brief.md |
-| 20260925-fix-cli-silent-failures | proposed | shadow-docs/changes/20260925-fix-cli-silent-failures/brief.md |
+| 20260925-fix-cli-silent-failures | ✅ 完成 | shadow-docs/changes/archive/20260925-fix-cli-silent-failures/brief.md |
 | 20261005-feature-shadow-dev-config | ✅ 完成 | shadow-docs/changes/archive/20261005-feature-shadow-dev-config/brief.md |
 | 20261005-feature-worktree-domain | ✅ 完成 | shadow-docs/changes/archive/20261005-feature-worktree-domain/brief.md |

@@ -4,9 +4,9 @@
   "name": "20260925-fix-cli-silent-failures",
   "type": "fix",
   "scope": "cli",
-  "status": "proposed",
+  "status": "archived",
   "baseBranch": "main",
-  "branch": null,
+  "branch": "fix/20260925-fix-cli-silent-failures",
   "files": [
     "lib/domains/archive.mjs",
     "lib/domains/branch.mjs",
@@ -21,18 +21,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 29,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/29",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 30,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/30"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "ed5dae77e922ec9504018246c651471ff68dc9fd",
+    "verifiedAt": "2026-10-08T02:59:44.202Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:29",
-    "planHash": "3d24545d8c604cb3e39b76a8244ff50b5ee3dab7ae3e1b4755d788d919f905a4",
+    "checkpoint": "merged-pr:30",
+    "planHash": "eaced3a21d6693c636e10d8704fe2483622a4b7958bc3d71a3cd6e04983ec13f",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -42,6 +42,11 @@
         "fix"
       ]
     }
+  },
+  "knowledge": {
+    "action": "更新",
+    "target": "shadow-docs/knowledge/plan-credential-chain.md",
+    "reason": "norm 剥离数组归一边界与 workflow.commit 持久化凭证同步进卡"
   }
 }
 ---
@@ -73,10 +78,10 @@
 ## 任务
 
 ### Phase 1
-- [ ] branch execute 非 base 分支抛 NOT_ON_BASE_BRANCH（含 current/base 与建议命令），红→绿 — `lib/domains/branch.mjs` — 修改
-- [ ] archive execute 追加三路径 git add + 本地 commit + nextStep push 提示，红→绿 — `lib/domains/archive.mjs` — 修改
-- [ ] commit 域 persistPlan（workflow.commit 持久化 + norm 剥离 + planData 回退），execute 免重传参数，红→绿 — `lib/domains/commit.mjs`, `lib/plan.mjs` — 修改
-- [ ] `node --test test/cli.test.mjs` 全绿；同步 plan-credential-chain 卡（数组归一边界）与 verified
+- [x] branch execute 非 base 分支抛 NOT_ON_BASE_BRANCH（含 current/base 与建议命令），红→绿 — `lib/domains/branch.mjs` — 修改
+- [x] archive execute 追加三路径 git add + 本地 commit + nextStep push 提示，红→绿 — `lib/domains/archive.mjs` — 修改
+- [x] commit 域 persistPlan（workflow.commit 持久化 + norm 剥离 + planData 回退），execute 免重传参数，红→绿 — `lib/domains/commit.mjs`, `lib/plan.mjs` — 修改
+- [x] `node --test test/cli.test.mjs` 全绿；同步 plan-credential-chain 卡（数组归一边界）与 verified
 
 ## 结果
 
