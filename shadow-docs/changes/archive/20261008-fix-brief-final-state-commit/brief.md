@@ -4,7 +4,7 @@
   "name": "20261008-fix-brief-final-state-commit",
   "type": "fix",
   "scope": "lib,test",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20261008-fix-brief-final-state-commit",
   "files": [
@@ -20,18 +20,18 @@
     "repository": null,
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 45,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/45"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "6c657103aed7058873de6394ad32d365e2f23ab3",
-    "verifiedAt": "2026-10-08T09:57:17.727Z"
+    "verifiedCommit": "3c5c4e327a10afcc412b00219c82b8b190342426",
+    "verifiedAt": "2026-10-08T10:20:24.038Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
-    "planHash": "1e83ff7ebda20d99d0b3e8be42cbb3f5d2117c44c49fb785cc3ca9e2a4c4e4bc",
+    "checkpoint": "merged-pr:45",
+    "planHash": "e0e846d832068160c796f0ecc8d794f19ea6012414c816346bf5f4dcc6822ba5",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -43,7 +43,7 @@
         "fix"
       ]
     },
-    "worktree": "D:\\works\\shadow-dev-cli-worktrees\\20261008-fix-brief-final-state-commit",
+    "worktree": null,
     "release": {
       "files": [
         "lib/domains/archive.mjs",
@@ -64,7 +64,7 @@
   "knowledge": {
     "action": "新增",
     "target": "shadow-docs/knowledge/brief-state-commit.md",
-    "reason": "确立跨域不变量:execute 状态写盘必有对应 commit(零 dirty)与 archive push 收口;additive 结果字段 briefCommit/pushed 为公开契约。与 plan-credential-chain(哈希剥离)、cli-output-contract(输出面)scope 不重叠,独立成卡"
+    "reason": "确立跨域不变量:execute 状态写盘必有对应 commit(零 dirty)与 archive push 收口;additive 结果字段 briefCommit/pushed 为公开契约"
   }
 }
 ---
