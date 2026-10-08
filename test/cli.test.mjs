@@ -460,7 +460,9 @@ test('commit uses only explicit files and rejects stale plans', () => {
   assert.equal(JSON.parse(stale.stdout).error.code, 'PLAN_HASH_INVALID')
   const result = run(['commit', 'execute', '--name', 'sample', '--files', 'README.md', '--message', 'docs: update readme', '--plan-hash', hash, '--confirm', '--json'], root)
   assert.equal(result.status, 0, result.stderr)
-  assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'docs: update readme')
+  assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'docs(shadow): brief 最终态——committed')
+  assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s', 'HEAD~1'], { cwd: root, encoding: 'utf8' }).trim(), 'docs: update readme')
+  assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '', 'zero-dirty: content and brief final state both committed')
 })
 
 test('conflict inspect reports overlapping active brief files', () => {
@@ -732,6 +734,7 @@ test('archive blocks an unmerged PR', () => {
 
 test('archive moves a reviewed brief after API merge proof and rebuilds index', () => {
   const root = fixture()
+  addOrigin(root)
   const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
   updateBrief(root, data => { data.github.repository = 'owner/repo'; data.github.pullRequest = 7; data.review = { conclusion: 'passed', verifiedCommit: head, verifiedAt: 'now' } })
   const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls/7', body: { number: 7, merged: true, merged_at: 'now' } }])
@@ -833,8 +836,9 @@ test('release execute commits, pushes and creates the PR in one step, then reuse
     const output = JSON.parse(result.stdout)
     assert.equal(output.data.number, 9)
     assert.equal(output.data.created, true)
-    assert.equal(output.data.commit, execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim())
-    assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'feat: sample')
+    assert.equal(output.data.commit, execFileSync('git', ['rev-parse', 'HEAD~1'], { cwd: root, encoding: 'utf8' }).trim())
+    assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'docs(shadow): brief 最终态——published, PR #9')
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '', 'zero-dirty: release execute must leave a clean tree')
     assert.equal(execFileSync('git', ['rev-parse', 'origin/feat/sample'], { cwd: root, encoding: 'utf8' }).trim(), execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim())
     assert.match(readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8'), /"status": "published"/)
     assert.deepEqual(api.requests().map(request => request.method), ['GET', 'POST'])
@@ -846,7 +850,8 @@ test('release execute commits, pushes and creates the PR in one step, then reuse
     const rerun = run(['release', 'execute', '--name', 'sample', '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: reuse.url })
     assert.equal(rerun.status, 0, rerun.stderr)
     assert.equal(JSON.parse(rerun.stdout).data.created, false)
-    assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'feat: sample')
+    assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'docs(shadow): brief 最终态——published, PR #9')
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '')
     assert.deepEqual(reuse.requests().map(request => request.method), ['GET'])
   } finally { reuse.close() }
 })
@@ -870,6 +875,7 @@ test('branch execute on a non-base branch fails loudly and leaves the brief unto
 
 test('archive execute lands the archive move as a local commit', () => {
   const root = fixture()
+  addOrigin(root)
   const head = () => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root }).toString().trim()
   execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
   execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
@@ -898,6 +904,7 @@ test('archive execute lands the archive move as a local commit', () => {
 
 test('archive execute survives an untracked change dir and lands the local commit', () => {
   const root = fixture()
+  addOrigin(root)
   const head = () => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root }).toString().trim()
   // brief 保持未追踪（如 release 文件清单遗漏了 change 目录），旧路径在移动后无物可加
   updateBrief(root, (d) => {
@@ -933,8 +940,10 @@ test('commit execute reuses persisted files and message without re-passing them'
   assert.equal(planned.status, 0, planned.stderr)
   const result = run(['commit', 'execute', '--name', 'sample', '--confirm', '--json'], root)
   assert.equal(result.status, 0, result.stdout)
-  const message = execFileSync('git', ['log', '-1', '--format=%B'], { cwd: root }).toString()
+  const message = execFileSync('git', ['log', '-1', '--format=%B', 'HEAD~1'], { cwd: root }).toString()
   assert.match(message, /feat: two files/)
+  assert.match(execFileSync('git', ['log', '-1', '--format=%B'], { cwd: root }).toString(), /docs\(shadow\): brief 最终态——committed/)
+  assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '')
 })
 
 // ---- workflow / bind 域：生态分发（无 brief 域，--plan-hash 是唯一凭证；任意目录可用）----
@@ -1394,4 +1403,153 @@ test('worktree: inspect recommends by rating and reports occupancy', () => {
   assert.equal(mine.recommendation, 'reuse', JSON.stringify(mine.worktrees))
   const self = mine.worktrees.find(w => w.branch === 'feat/sample')
   assert.equal(self.occupiedBy, 'sample')
+})
+
+// ---- 20261008-fix-brief-final-state-commit:零 dirty 不变量——每次状态变动落盘后必须有对应 commit ----
+
+test('zero-dirty: commit execute lands the brief final state as a follow-up commit and leaves a clean tree', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'a.js'), 'a\n')
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  const planned = run(['commit', 'plan', '--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md,a.js', '--message', 'feat: sample', '--json'], root)
+  assert.equal(planned.status, 0, planned.stderr)
+  const result = run(['commit', 'execute', '--name', 'sample', '--confirm', '--json'], root)
+  assert.equal(result.status, 0, result.stderr)
+  const output = JSON.parse(result.stdout)
+  const firstCommit = execFileSync('git', ['rev-parse', 'HEAD~1'], { cwd: root, encoding: 'utf8' }).trim()
+  assert.equal(output.data.commit, firstCommit, 'commit field stays the content commit')
+  assert.equal(typeof output.data.briefCommit, 'string', 'additive briefCommit field carries the final-state commit sha')
+  assert.equal(output.data.briefCommit, execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim())
+  assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'docs(shadow): brief 最终态——committed')
+  assert.match(execFileSync('git', ['show', 'HEAD:shadow-docs/changes/sample/brief.md'], { cwd: root, encoding: 'utf8' }), /"status": "committed"/)
+  assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '', 'tree must be clean after commit execute')
+})
+
+test('zero-dirty: release execute commits brief published state with PR number and pushes the clean tip', () => {
+  const root = fixture()
+  addOrigin(root)
+  execFileSync('git', ['switch', '-c', 'feat/sample'], { cwd: root })
+  writeFileSync(join(root, 'a.js'), 'a\n')
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  updateBrief(root, data => { data.github.repository = 'owner/repo'; data.branch = 'feat/sample'; data.status = 'reviewed'; data.review = { conclusion: 'passed', verifiedCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), verifiedAt: 'now' } })
+  const api = apiStub([
+    { method: 'GET', path: '/repos/owner/repo/pulls?', body: [] },
+    { method: 'POST', path: '/repos/owner/repo/pulls', body: { number: 9, html_url: 'https://github.test/pulls/9' } },
+  ])
+  try {
+    const planned = run(['release', 'plan', '--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md,a.js', '--message', 'feat: sample', '--title', 'Sample PR', '--json'], root)
+    assert.equal(planned.status, 0, planned.stderr)
+    const result = run(['release', 'execute', '--name', 'sample', '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    const output = JSON.parse(result.stdout)
+    assert.equal(typeof output.data.briefCommit, 'string')
+    assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'docs(shadow): brief 最终态——published, PR #9')
+    const tipBrief = execFileSync('git', ['show', 'HEAD:shadow-docs/changes/sample/brief.md'], { cwd: root, encoding: 'utf8' })
+    assert.match(tipBrief, /"status": "published"/)
+    assert.match(tipBrief, /"pullRequest": 9/)
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '', 'tree must be clean after release execute')
+    assert.equal(execFileSync('git', ['rev-parse', 'origin/feat/sample'], { cwd: root, encoding: 'utf8' }).trim(), execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), 'remote tip must carry the final state')
+  } finally { api.close() }
+})
+
+test('zero-dirty: publish execute commits and pushes brief final state after PR creation', () => {
+  const root = fixture()
+  addOrigin(root)
+  execFileSync('git', ['switch', '-c', 'feat/sample'], { cwd: root })
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  execFileSync('git', ['push', '-u', 'origin', 'feat/sample'], { cwd: root })
+  updateBrief(root, data => { data.github.repository = 'owner/repo'; data.branch = 'feat/sample'; data.status = 'committed'; data.workflow.checkpoint = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim() })
+  const api = apiStub([
+    { method: 'GET', path: '/repos/owner/repo/pulls?', body: [] },
+    { method: 'POST', path: '/repos/owner/repo/pulls', body: { number: 11, html_url: 'https://github.test/pulls/11' } },
+  ])
+  try {
+    const args = ['--name', 'sample', '--title', 'Sample PR', '--body', 'b']
+    const planned = run(['publish', 'plan', ...args, '--json'], root)
+    assert.equal(planned.status, 0, planned.stderr)
+    const result = run(['publish', 'execute', ...args, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    const output = JSON.parse(result.stdout)
+    assert.equal(typeof output.data.briefCommit, 'string')
+    assert.equal(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), 'docs(shadow): brief 最终态——published, PR #11')
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '', 'tree must be clean after publish execute')
+    assert.equal(execFileSync('git', ['rev-parse', 'origin/feat/sample'], { cwd: root, encoding: 'utf8' }).trim(), execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim())
+  } finally { api.close() }
+})
+
+test('zero-dirty: archive execute pushes the archive commit to origin main', () => {
+  const root = fixture()
+  const remote = addOrigin(root)
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  updateBrief(root, (d) => {
+    d.status = 'published'
+    d.github = { repository: 'owner/repo', issue: null, issueUrl: null, pullRequest: 9, pullRequestUrl: 'https://github.test/pull/9' }
+    d.review = { conclusion: 'passed', verifiedCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), verifiedAt: '2026-01-01T00:00:00.000Z' }
+  })
+  const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls/9', body: { number: 9, merged: true, state: 'closed' } }])
+  try {
+    const planned = run(['archive', 'plan', '--name', 'sample', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(planned.status, 0, planned.stderr)
+    const result = run(['archive', 'execute', '--name', 'sample', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(JSON.parse(result.stdout).data.pushed, true)
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '', 'tree must be clean after archive execute')
+    assert.equal(execFileSync('git', ['rev-parse', 'main'], { cwd: remote, encoding: 'utf8' }).trim(), execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), 'origin/main must carry the archive commit')
+  } finally { api.close() }
+})
+
+test('zero-dirty: release rerun cycles converge — each replan drift lands exactly one brief commit', () => {
+  const root = fixture()
+  addOrigin(root)
+  execFileSync('git', ['switch', '-c', 'feat/sample'], { cwd: root })
+  writeFileSync(join(root, 'a.js'), 'a\n')
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  updateBrief(root, data => { data.github.repository = 'owner/repo'; data.branch = 'feat/sample'; data.status = 'reviewed'; data.review = { conclusion: 'passed', verifiedCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), verifiedAt: 'now' } })
+  const api = apiStub([
+    { method: 'GET', path: '/repos/owner/repo/pulls?', body: [{ number: 9, html_url: 'https://github.test/pulls/9' }] },
+  ])
+  try {
+    const env = { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url }
+    assert.equal(run(['release', 'plan', '--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md,a.js', '--message', 'feat: sample', '--title', 'Sample PR', '--json'], root).status, 0)
+    assert.equal(run(['release', 'execute', '--name', 'sample', '--confirm', '--json'], root, env).status, 0)
+    const commits = execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '')
+    // replan 的 planHash 相对已提交内容产生新漂移（head 参与哈希，补提交前移 HEAD）——这笔漂移恰好收口为一笔最终态 commit
+    assert.equal(run(['release', 'plan', '--name', 'sample', '--json'], root).status, 0)
+    const second = run(['release', 'execute', '--name', 'sample', '--confirm', '--json'], root, env)
+    assert.equal(second.status, 0, second.stderr)
+    assert.equal(JSON.parse(second.stdout).data.briefCommit, execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim())
+    assert.equal(execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), String(Number(commits) + 1), 'replan drift must land exactly one brief commit')
+    assert.match(execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: root, encoding: 'utf8' }).trim(), /^docs\(shadow\): brief 最终态——published, PR #9$/)
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '')
+    assert.equal(execFileSync('git', ['rev-parse', 'origin/feat/sample'], { cwd: root, encoding: 'utf8' }).trim(), execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), 'remote tip must stay in sync with the local clean state')
+  } finally { api.close() }
+})
+
+test('zero-dirty: archive final state (status archived + INDEX entry) is what reaches origin', () => {
+  const root = fixture()
+  const remote = addOrigin(root)
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed briefs'], { cwd: root })
+  updateBrief(root, (d) => {
+    d.status = 'published'
+    d.github = { repository: 'owner/repo', issue: null, issueUrl: null, pullRequest: 9, pullRequestUrl: 'https://github.test/pull/9' }
+    d.review = { conclusion: 'passed', verifiedCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), verifiedAt: '2026-01-01T00:00:00.000Z' }
+  })
+  const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls/9', body: { number: 9, merged: true, state: 'closed' } }])
+  try {
+    const planned = run(['archive', 'plan', '--name', 'sample', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(planned.status, 0, planned.stderr)
+    const result = run(['archive', 'execute', '--name', 'sample', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    const onRemote = execFileSync('git', ['show', 'main:shadow-docs/changes/archive/sample/brief.md'], { cwd: remote, encoding: 'utf8' })
+    assert.match(onRemote, /"status": "archived"/)
+    assert.match(onRemote, /"checkpoint": "merged-pr:9"/)
+    assert.match(execFileSync('git', ['show', 'main:shadow-docs/INDEX.md'], { cwd: remote, encoding: 'utf8' }), /archive\/sample\/brief\.md/)
+  } finally { api.close() }
 })
