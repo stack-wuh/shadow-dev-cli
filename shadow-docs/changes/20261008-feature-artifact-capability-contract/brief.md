@@ -32,7 +32,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "f739507d2c279136523b108cf2a073efcfac2b3f",
+    "checkpoint": "1a681072d2e989b94534bc8e84f6853bf00edf3b",
     "planHash": "6f1dd2ba2dd24bd4049f041f0fb083168542e15d910d9e0cbf78c895bb551635",
     "updatedAt": null,
     "lastError": null,
