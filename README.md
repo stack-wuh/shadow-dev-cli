@@ -139,6 +139,19 @@ shadow-dev issue execute --name <名称> --confirm
 └── .shadow-dev-workflow.json      # 托管清单（unbind 的依据;非托管同名目录会被拒绝覆盖）
 ```
 
+### 博客发布：blog publish（无 brief 域，任意目录可用）
+
+收编 blog 仓的发布脚本：解析文章 frontmatter → 在目标仓库创建 Issue → 即时调用主站同步接口（webhook 兜底，同步失败不阻断发布）。
+
+| 命令 | 作用 |
+|------|------|
+| `blog publish plan` | 解析文章，预览标题/标签/目标仓库/同步地址；stdout 只回 `title/labels/bodyBytes/bodySha256` 摘要 + planHash |
+| `blog publish execute` | 创建 Issue 并 ping 主站同步（`--plan-hash` 为唯一凭证；结果含 `issue.number/url` 与 `sync.ok`） |
+
+- 文章头部：`title` 必填；`labels`/`keywords` 支持内联数组或逗号串；`summary`/`cover`/`keywords` 以 `wuh-site-metadata` 注释块附在正文尾部供主站解析。
+- 解析链：仓库 `--repository > config blog.repository > 默认 stack-wuh/blog`；同步地址 `--sync-url > SYNC_URL > cwd/.env > config blog.syncUrl > http://localhost:3200`。
+- token 仍只走 `GITHUB_TOKEN`/`GH_TOKEN` 环境变量或 `cwd/.env`（secrets 不进配置文件）；plan 之后改动文章，execute 会以 `PLAN_HASH_INVALID` 拒绝。
+
 ### brief 生命周期（git 仓库内）
 
 | 命令 | 作用 |
@@ -181,7 +194,7 @@ shadow-dev issue execute --name <名称> --confirm
 
 ## 核心机制：plan → execute
 
-- `plan` 对计划数据做 SHA256 得到 **planHash**。带 `--name` 的域把 hash 持久化进 brief,`execute` 自动校验,无需搬运；无 brief 域（`workflow` / `bind` / `index rebuild`）hash 不落盘,`execute` 必须显式 `--plan-hash`。
+- `plan` 对计划数据做 SHA256 得到 **planHash**。带 `--name` 的域把 hash 持久化进 brief,`execute` 自动校验,无需搬运；无 brief 域（`workflow` / `bind` / `index rebuild` / `blog publish`）hash 不落盘,`execute` 必须显式 `--plan-hash`。
 - plan 之后相关状态有任何变化 → `PLAN_HASH_INVALID`（退出码 1）,重跑 plan 即可；没跑 plan 就 execute → `PLAN_HASH_REQUIRED`（退出码 2）。
 - 所有写操作必须显式 `--confirm`。
 
@@ -190,8 +203,8 @@ shadow-dev issue execute --name <名称> --confirm
 | 码 | 含义 | 典型错误码 |
 |----|------|-----------|
 | 0 | 成功 | — |
-| 1 | 输入/校验错误 | `PLAN_HASH_INVALID`、`BRIEF_NOT_FOUND`、`NAME_REQUIRED`、`TASKS_NOT_COMPLETE`、`REVIEW_NOT_PASSED`、`PR_NOT_MERGED`、`ARTIFACT_INVALID`、`UNMANAGED_TARGET` |
-| 2 | 缺少确认或凭证 | `CONFIRMATION_REQUIRED`、`PLAN_HASH_REQUIRED` |
+| 1 | 输入/校验错误 | `PLAN_HASH_INVALID`、`BRIEF_NOT_FOUND`、`NAME_REQUIRED`、`TASKS_NOT_COMPLETE`、`REVIEW_NOT_PASSED`、`PR_NOT_MERGED`、`ARTIFACT_INVALID`、`UNMANAGED_TARGET`、`BLOG_FILE_NOT_FOUND`、`BLOG_TITLE_REQUIRED` |
+| 2 | 缺少确认或凭证 | `CONFIRMATION_REQUIRED`、`PLAN_HASH_REQUIRED`、`BLOG_FILE_REQUIRED` |
 | 3 | 外部系统失败 | `GITHUB_TOKEN_REQUIRED`、`GITHUB_API_ERROR`、`API_TIMEOUT`、`GIT_PUSH_FAILED`、`DOWNLOAD_FAILED`、`RELEASE_NOT_FOUND` |
 | 4 | 不支持的操作 | `UNSUPPORTED_OPERATION`（如 `git add .`、绝对路径） |
 
@@ -218,7 +231,8 @@ v1 键面（逐键生效，两层各供各的键；未知键静默忽略）：
   "lang": "zh",
   "quiet": false,
   "json": false,
-  "github": { "apiBaseUrl": "https://api.github.com", "timeoutMs": 15000 }
+  "github": { "apiBaseUrl": "https://api.github.com", "timeoutMs": 15000 },
+  "blog": { "repository": "stack-wuh/blog", "syncUrl": "http://localhost:3200" }
 }
 ```
 

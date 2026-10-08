@@ -1217,6 +1217,162 @@ test('worktree: remove refuses a dirty worktree with WORKTREE_DIRTY', () => {
   assert.equal(existsSync(wt), true)
 })
 
+// ---------- blog publish 域（收编 blog 仓发布脚本）----------
+
+function blogFixture() {
+  const root = mkdtempSync(join(tmpdir(), 'shadow-blog-'))
+  mkdirSync(join(root, 'posts'), { recursive: true })
+  writeFileSync(join(root, 'posts', 'hello.md'), `---
+title: 测试文章
+labels: [随笔, 技术]
+summary: 摘要A
+cover: https://cdn.wuh.site/c.png
+keywords: [K1, K2]
+---
+
+正文内容。
+`)
+  return root
+}
+
+function blogStub() {
+  return apiStub([
+    { method: 'POST', path: '/repos/stack-wuh/blog/issues', body: { number: 99, html_url: 'http://127.0.0.1/stack-wuh/blog/issues/99' } },
+    { method: 'POST', path: '/v2/webhook/sync/99', status: 200, body: { ok: true } },
+  ])
+}
+
+test('blog publish: plan previews the article from frontmatter', () => {
+  const root = blogFixture()
+  const planned = run(['blog', 'publish', 'plan', '--file', 'posts/hello.md', '--json'], root, { ...fakeHomeWithConfig({}) })
+  assert.equal(planned.status, 0, planned.stderr)
+  const v = JSON.parse(planned.stdout)
+  assert.equal(v.command, 'blog.publish.plan')
+  assert.equal(v.ok, true)
+  assert.ok(/^[0-9a-f]{64}$/.test(v.planHash))
+  const d = v.data
+  assert.equal(d.title, '测试文章')
+  assert.deepEqual(d.labels, ['随笔', '技术'])
+  assert.equal(d.repository, 'stack-wuh/blog')
+  assert.equal(d.syncUrl, 'http://localhost:3200')
+  assert.ok(d.bodyBytes > 0 && typeof d.bodySha256 === 'string')
+  assert.ok(!('body' in d) && !('raw' in d), 'stdout must stay a lean preview')
+  assert.match(d.nextStep, /blog publish execute --file .* --plan-hash [0-9a-f]{64} --confirm/)
+})
+
+test('blog publish: execute creates the issue then pings the sync endpoint', () => {
+  const root = blogFixture()
+  const api = blogStub()
+  try {
+    const env = { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url, SYNC_URL: api.url, ...fakeHomeWithConfig({}) }
+    const planned = run(['blog', 'publish', 'plan', '--file', 'posts/hello.md', '--json'], root, env)
+    assert.equal(planned.status, 0, planned.stderr)
+    const result = run(['blog', 'publish', 'execute', '--file', 'posts/hello.md', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, env)
+    assert.equal(result.status, 0, result.stderr)
+    const v = JSON.parse(result.stdout)
+    assert.equal(v.data.issue.number, 99)
+    assert.equal(v.data.sync.ok, true)
+    const issueCall = api.requests().find(r => r.url.startsWith('/repos/stack-wuh/blog/issues'))
+    assert.ok(issueCall, 'issue POST must hit the API stub')
+    const sent = JSON.parse(issueCall.body)
+    assert.equal(sent.title, '测试文章')
+    assert.deepEqual(sent.labels, ['随笔', '技术'])
+    const tail = '\n\n<!-- wuh-site-metadata: {"summary":"摘要A","cover":"https://cdn.wuh.site/c.png","keywords":["K1","K2"]} -->'
+    assert.ok(sent.body.endsWith('正文内容。' + tail), sent.body)
+    assert.ok(api.requests().some(r => r.method === 'POST' && r.url === '/v2/webhook/sync/99'))
+  } finally { api.close() }
+})
+
+test('blog publish: edits between plan and execute are rejected', () => {
+  const root = blogFixture()
+  const api = blogStub()
+  try {
+    const env = { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url, SYNC_URL: api.url, ...fakeHomeWithConfig({}) }
+    const planned = run(['blog', 'publish', 'plan', '--file', 'posts/hello.md', '--json'], root, env)
+    assert.equal(planned.status, 0, planned.stderr)
+    writeFileSync(join(root, 'posts', 'hello.md'), readFileSync(join(root, 'posts', 'hello.md'), 'utf8') + '\n追加一段。\n')
+    const stale = run(['blog', 'publish', 'execute', '--file', 'posts/hello.md', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, env)
+    assert.equal(stale.status, 1)
+    assert.equal(JSON.parse(stale.stdout).error.code, 'PLAN_HASH_INVALID')
+  } finally { api.close() }
+})
+
+test('blog publish: input contract errors', () => {
+  const root = blogFixture()
+  const noFile = run(['blog', 'publish', 'plan', '--json'], root, fakeHomeWithConfig({}))
+  assert.equal(noFile.status, 2)
+  assert.equal(JSON.parse(noFile.stdout).error.code, 'BLOG_FILE_REQUIRED')
+  const missing = run(['blog', 'publish', 'plan', '--file', 'posts/nope.md', '--json'], root, fakeHomeWithConfig({}))
+  assert.equal(missing.status, 1)
+  assert.equal(JSON.parse(missing.stdout).error.code, 'BLOG_FILE_NOT_FOUND')
+  writeFileSync(join(root, 'posts', 'plain.md'), '# 无 frontmatter 的文章\n')
+  const noTitle = run(['blog', 'publish', 'plan', '--file', 'posts/plain.md', '--json'], root, fakeHomeWithConfig({}))
+  assert.equal(noTitle.status, 1)
+  assert.equal(JSON.parse(noTitle.stdout).error.code, 'BLOG_TITLE_REQUIRED')
+})
+
+test('blog publish: sync failure stays best-effort', () => {
+  const root = blogFixture()
+  const api = apiStub([
+    { method: 'POST', path: '/repos/stack-wuh/blog/issues', body: { number: 99, html_url: 'http://127.0.0.1/i/99' } },
+    { method: 'POST', path: '/v2/webhook/sync/99', status: 500, body: { message: 'boom' } },
+  ])
+  try {
+    const env = { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url, SYNC_URL: api.url, ...fakeHomeWithConfig({}) }
+    const planned = run(['blog', 'publish', 'plan', '--file', 'posts/hello.md', '--json'], root, env)
+    const result = run(['blog', 'publish', 'execute', '--file', 'posts/hello.md', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, env)
+    assert.equal(result.status, 0, result.stderr)
+    const v = JSON.parse(result.stdout)
+    assert.equal(v.ok, true)
+    assert.equal(v.data.issue.number, 99)
+    assert.equal(v.data.sync.ok, false)
+    assert.equal(v.data.sync.status, 500)
+  } finally { api.close() }
+})
+
+test('blog publish: .env fallback supplies token and sync url', () => {
+  const root = blogFixture()
+  const api = blogStub()
+  try {
+    writeFileSync(join(root, '.env'), `GITHUB_TOKEN=tok-from-dotenv\nSYNC_URL=${api.url}\n`)
+    const env = { GITHUB_TOKEN: '', GH_TOKEN: '', SHADOW_GITHUB_API_URL: api.url, ...fakeHomeWithConfig({}) }
+    const planned = run(['blog', 'publish', 'plan', '--file', 'posts/hello.md', '--json'], root, env)
+    assert.equal(planned.status, 0, planned.stderr)
+    assert.equal(JSON.parse(planned.stdout).data.syncUrl, api.url)
+    const result = run(['blog', 'publish', 'execute', '--file', 'posts/hello.md', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, env)
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(JSON.parse(result.stdout).data.issue.number, 99)
+  } finally { api.close() }
+})
+
+test('blog publish: config chain and flag override', () => {
+  const root = blogFixture()
+  mkdirSync(join(root, '.shadow-dev'), { recursive: true })
+  writeFileSync(join(root, '.shadow-dev', 'config.json'), JSON.stringify({ blog: { repository: 'cfg/repo', syncUrl: 'http://127.0.0.1:9999' } }))
+  const base = { ...fakeHomeWithConfig({}) }
+  const fromCfg = JSON.parse(run(['blog', 'publish', 'plan', '--file', 'posts/hello.md', '--json'], root, base).stdout).data
+  assert.equal(fromCfg.repository, 'cfg/repo')
+  assert.equal(fromCfg.syncUrl, 'http://127.0.0.1:9999')
+  const envWins = JSON.parse(run(['blog', 'publish', 'plan', '--file', 'posts/hello.md', '--json'], root, { ...base, SYNC_URL: 'http://127.0.0.1:1234' }).stdout).data
+  assert.equal(envWins.syncUrl, 'http://127.0.0.1:1234')
+  const flagWins = JSON.parse(run(['blog', 'publish', 'plan', '--file', 'posts/hello.md', '--repository', 'flag/repo', '--sync-url', 'http://127.0.0.1:4321', '--json'], root, { ...base, SYNC_URL: 'http://127.0.0.1:1234' }).stdout).data
+  assert.equal(flagWins.repository, 'flag/repo')
+  assert.equal(flagWins.syncUrl, 'http://127.0.0.1:4321')
+})
+
+test('blog publish: help and human layer stay contract-clean', () => {
+  const listed = run(['--help'])
+  assert.match(listed.stdout, /blog publish plan\|execute/)
+  const group = run(['help', 'blog', '--json'])
+  assert.equal(group.status, 0)
+  assert.ok(JSON.parse(group.stdout).data.commands['blog.publish.plan'])
+  assert.ok(JSON.parse(group.stdout).data.commands['blog.publish.execute'])
+  const errZh = run(['blog', 'publish', 'plan', '--file', 'nope.md', '--json'], blogFixture(), { SHADOW_DEV_LANG: 'zh', ...fakeHomeWithConfig({}) })
+  assert.match(errZh.stderr, /BLOG_FILE_NOT_FOUND/)
+  assert.match(errZh.stderr, /✗/)
+  assert.equal(JSON.parse(errZh.stdout).ok, false)
+})
+
 test('worktree: inspect recommends by rating and reports occupancy', () => {
   const root = fixture()
   setRating(root, 'L')
