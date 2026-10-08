@@ -4,7 +4,7 @@
   "name": "20261005-feature-shadow-dev-config",
   "type": "feature",
   "scope": "lib",
-  "status": "reviewed",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20261005-feature-shadow-dev-config",
   "files": [
@@ -21,18 +21,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 34,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/34",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 40,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/40"
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "e9460be0e7d3d9b580e966ff76b2052ee04989a7",
-    "verifiedAt": "2026-10-06T16:54:05.638Z"
+    "verifiedCommit": "0246ef6831b67e85256f3a4132da38e86f4fac65",
+    "verifiedAt": "2026-10-08T02:57:44.824Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:34",
-    "planHash": "cd538d3064d2a5e2505934225c89df00660e843922ecbf3464177c6ff40a45fa",
+    "checkpoint": "merged-pr:40",
+    "planHash": "935a23f9ad266467b285b00ff4b6888715677ce1d75f2c59fdeceafc096aca38",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {

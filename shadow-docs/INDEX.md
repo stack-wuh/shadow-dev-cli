@@ -19,3 +19,5 @@
 | 20260925-chore-bootstrap-v14 | ✅ 完成 | shadow-docs/changes/archive/20260925-chore-bootstrap-v14/brief.md |
 | 20260925-feature-workflow-domain | ✅ 完成 | shadow-docs/changes/archive/20260925-feature-workflow-domain/brief.md |
 | 20260925-fix-cli-silent-failures | proposed | shadow-docs/changes/20260925-fix-cli-silent-failures/brief.md |
+| 20261005-feature-shadow-dev-config | ✅ 完成 | shadow-docs/changes/archive/20261005-feature-shadow-dev-config/brief.md |
+| 20261005-feature-worktree-domain | reviewed | shadow-docs/changes/20261005-feature-worktree-domain/brief.md |
