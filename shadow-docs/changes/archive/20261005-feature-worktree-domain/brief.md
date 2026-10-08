@@ -4,7 +4,7 @@
   "name": "20261005-feature-worktree-domain",
   "type": "feature",
   "scope": "lib,cli",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "feature/20261005-feature-shadow-dev-config",
   "branch": "feature/20261005-feature-worktree-domain",
   "files": [
@@ -25,13 +25,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "00aba8498beb64851bda025bf0f7f6d0d6b02843",
-    "verifiedAt": "2026-10-06T23:37:16.015Z"
+    "verifiedCommit": "dfc6d0ad99f829effdae1a835408d226965bd1ec",
+    "verifiedAt": "2026-10-08T02:58:33.894Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:37",
-    "planHash": "d7e64f719aa98c3c8c71791cd6382ff600cc3192f638a9944b025645c12ead21",
+    "checkpoint": "merged-pr:37",
+    "planHash": "7b934384cbaae87a2d6ef1724a4a31c80623c083b9ee546330807a8e575d77a7",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -68,7 +68,7 @@
   "knowledge": {
     "action": "无需变更",
     "target": null,
-    "reason": "新命令域契约由 README 与命令目录承载,凭证链与输出契约卡片结论仅被复用不被改写"
+    "reason": null
   }
 }
 ---
