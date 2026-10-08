@@ -4,7 +4,7 @@
   "name": "20261008-feature-artifact-capability-contract",
   "type": "feature",
   "scope": "lib/domains/workflow.mjs,lib/commands.mjs,test",
-  "status": "branched",
+  "status": "committed",
   "baseBranch": "main",
   "branch": "feature/20261008-feature-artifact-capability-contract",
   "files": [
@@ -32,8 +32,8 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
-    "planHash": "13797878df214232813b9d0f7601cd2170d6457ae066288b494a975bd8450191",
+    "checkpoint": "f739507d2c279136523b108cf2a073efcfac2b3f",
+    "planHash": "6f1dd2ba2dd24bd4049f041f0fb083168542e15d910d9e0cbf78c895bb551635",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -47,14 +47,9 @@
     },
     "commit": {
       "files": [
-        "README.md",
-        "lib/commands.mjs",
-        "lib/domains/workflow.mjs",
-        "lib/i18n.mjs",
-        "shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md",
-        "test/cli.test.mjs"
+        "shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md"
       ],
-      "message": "feat(distribution): 产物能力契约——requiresCommands 落盘前断言，ARTIFACT_INCOMPATIBLE 保指针不动"
+      "message": "docs(shadow): brief 最终态——committed"
     }
   }
 }
