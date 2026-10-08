@@ -27,8 +27,9 @@ import * as inspect from './lib/domains/inspect.mjs'
 import * as index from './lib/domains/index.mjs'
 import * as workflow from './lib/domains/workflow.mjs'
 import * as bind from './lib/domains/bind.mjs'
+import * as blog from './lib/domains/blog.mjs'
 
-const DOMAINS = { branch, sync, review, commit, publish, release, reconcile, archive, issue, index, worktree }
+const DOMAINS = { branch, sync, review, commit, publish, release, reconcile, archive, issue, index, worktree, blog }
 
 // execute 与 plan 用同一 planData 重算并对比 hash。带 --name 的域以 brief 里的 planHash 为前置凭证；
 // 无 brief 的域（如 index rebuild）--plan-hash 是唯一凭证
@@ -84,7 +85,7 @@ async function handle(r, p, o) {
   if (d === 'bind') return await bind.handle(a, o)
   if (d === 'worktree' && a === 'inspect') return { ok: true, command: 'worktree.inspect', data: worktree.state(r, o) }
   if (Object.hasOwn(DOMAINS, d)) {
-    const nested = a === 'rebuild' || (d === 'worktree' && a === 'remove')
+    const nested = a === 'rebuild' || d === 'blog' || (d === 'worktree' && a === 'remove')
     const verb = nested ? s : a, c = nested ? `${d}.${a}` : d
     const mod = d === 'worktree' && a === 'remove' ? { planData: worktree.removePlanData, present: worktree.removePresent, execute: worktree.removeExecute } : DOMAINS[d]
     if (verb === 'plan') return await planDomain(c, mod, r, o)
@@ -113,7 +114,7 @@ try {
     human.printHelp(L, v)
   } else {
     human.enter(L, p)
-    v = human.decorate(await handle(p[0] === 'workflow' || p[0] === 'bind' ? null : root(), p, o), o)
+    v = human.decorate(await handle(p[0] === 'workflow' || p[0] === 'bind' || p[0] === 'blog' ? null : root(), p, o), o)
     human.done(L, v, Date.now() - t0)
   }
   if (jsonEnabled(o)) out(v)
