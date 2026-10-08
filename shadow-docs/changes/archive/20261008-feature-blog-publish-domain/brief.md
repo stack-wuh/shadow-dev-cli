@@ -4,7 +4,7 @@
   "name": "20261008-feature-blog-publish-domain",
   "type": "feature",
   "scope": "lib,cli",
-  "status": "branched",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20261008-feature-blog-publish-domain",
   "files": [
@@ -22,18 +22,18 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 41,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/41",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 42,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/42"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "d10da063f00e54a74b8795f62d1e312fa55389a4",
+    "verifiedAt": "2026-10-08T03:38:26.640Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:41",
-    "planHash": "12e47e22114e14d488707e2595bc98dc61291a003d9dae280932be016bb91b76",
+    "checkpoint": "merged-pr:42",
+    "planHash": "fb93576663d9e6dd9f8376cb572d23062e1b4337df946319eedce6db054e7a41",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -61,6 +61,11 @@
       "title": "feat(blog): blog publish 域——收编 blog 仓发布脚本",
       "body": "Closes #41\n\n完整 brief：shadow-docs/changes/20261008-feature-blog-publish-domain/brief.md"
     }
+  },
+  "knowledge": {
+    "action": "无需变更",
+    "target": null,
+    "reason": null
   }
 }
 ---

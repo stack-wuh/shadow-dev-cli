@@ -21,3 +21,4 @@
 | 20260925-fix-cli-silent-failures | ✅ 完成 | shadow-docs/changes/archive/20260925-fix-cli-silent-failures/brief.md |
 | 20261005-feature-shadow-dev-config | ✅ 完成 | shadow-docs/changes/archive/20261005-feature-shadow-dev-config/brief.md |
 | 20261005-feature-worktree-domain | ✅ 完成 | shadow-docs/changes/archive/20261005-feature-worktree-domain/brief.md |
+| 20261008-feature-blog-publish-domain | ✅ 完成 | shadow-docs/changes/archive/20261008-feature-blog-publish-domain/brief.md |
