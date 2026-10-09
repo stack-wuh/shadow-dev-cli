@@ -4,7 +4,7 @@
   "name": "20261008-feature-artifact-capability-contract",
   "type": "feature",
   "scope": "lib/domains/workflow.mjs,lib/commands.mjs,test",
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "feature/20261008-feature-artifact-capability-contract",
   "files": [
