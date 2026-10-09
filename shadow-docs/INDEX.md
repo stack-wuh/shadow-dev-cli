@@ -21,6 +21,7 @@
 | 20260925-fix-cli-silent-failures | ✅ 完成 | shadow-docs/changes/archive/20260925-fix-cli-silent-failures/brief.md |
 | 20261005-feature-shadow-dev-config | ✅ 完成 | shadow-docs/changes/archive/20261005-feature-shadow-dev-config/brief.md |
 | 20261005-feature-worktree-domain | ✅ 完成 | shadow-docs/changes/archive/20261005-feature-worktree-domain/brief.md |
+| 20261008-feature-artifact-capability-contract | ✅ 完成 | shadow-docs/changes/archive/20261008-feature-artifact-capability-contract/brief.md |
 | 20261008-feature-blog-publish-domain | ✅ 完成 | shadow-docs/changes/archive/20261008-feature-blog-publish-domain/brief.md |
 | 20261008-fix-brief-final-state-commit | ✅ 完成 | shadow-docs/changes/archive/20261008-fix-brief-final-state-commit/brief.md |
 | 20261008-fix-ci-bind-tar-harness | ✅ 完成 | shadow-docs/changes/archive/20261008-fix-ci-bind-tar-harness/brief.md |

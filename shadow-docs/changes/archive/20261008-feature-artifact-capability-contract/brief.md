@@ -4,7 +4,7 @@
   "name": "20261008-feature-artifact-capability-contract",
   "type": "feature",
   "scope": "lib/domains/workflow.mjs,lib/commands.mjs,test",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "feature/20261008-feature-artifact-capability-contract",
   "files": [
@@ -27,13 +27,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "5dc4825d83f902a80845816291dd971816cd5728",
-    "verifiedAt": "2026-10-09T00:31:46.552Z"
+    "verifiedCommit": "0fd64f40ca74261333b881f9ee4310df0c4d9745",
+    "verifiedAt": "2026-10-09T14:06:23.116Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:47",
-    "planHash": "0ccd06d978d95ac31b3497ee583b05a0b029309989cc08b696260478fd08bddc",
+    "checkpoint": "merged-pr:47",
+    "planHash": "ac475b8eb83d6ba018e3b3676d7a1d2e40c4630a21febd3f48e7284d888df0af",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -63,7 +63,7 @@
   "knowledge": {
     "action": "更新",
     "target": "shadow-docs/knowledge/install-distribution.md",
-    "reason": "卡片已收录 requiresCommands 能力契约、落盘前断言不可绕过与 status 三元组；最终提交 5dc4825 的 CI（run 37864859648）9/9 通过，验证强度达 L 级期望的 runtime"
+    "reason": "卡片更新已随 PR #47 合入 main；本次为归档前置的 verifiedCommit 重钉（main=0fd64f4），验证证据仍为 CI 9/9（run 37864139301）+ runtime 10/10"
   }
 }
 ---
