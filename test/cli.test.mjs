@@ -684,6 +684,41 @@ test('publish pushes normally and creates a PR when none exists', () => {
   } finally { api.close() }
 })
 
+test('publish reuses an already merged PR instead of opening a duplicate', () => {
+  const root = fixture()
+  addOrigin(root)
+  execFileSync('git', ['switch', '-c', 'feat/sample'], { cwd: root })
+  writeFileSync(join(root, 'feature.txt'), 'feature' + String.fromCharCode(10))
+  execFileSync('git', ['add', '--', 'feature.txt'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'feature'], { cwd: root })
+  // 复现 2026-10-09 事故：PR 已 merged，brief 的 pullRequest 字段被复验回写清空
+  updateBrief(root, data => { data.github.repository = 'owner/repo'; data.branch = 'feat/sample'; data.github.pullRequest = null; data.github.pullRequestUrl = null })
+  const merged = { number: 525, state: 'closed', merged_at: '2026-10-09T11:20:00Z', html_url: 'https://github.test/pulls/525', base: { ref: 'main' } };
+  const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls?', body: [merged] }])
+  try {
+    const args = ['--name', 'sample', '--title', 'Feature']
+    const planned = run(['publish', 'plan', ...args, '--json'], root)
+    const result = run(['publish', 'execute', ...args, '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    const out = JSON.parse(result.stdout)
+    assert.equal(out.data.number, 525)
+    assert.equal(out.data.created, false)
+    assert.deepEqual(api.requests().map(request => request.method), ['GET'])
+    assert.match(readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8'), /"pullRequest": 525/)
+  } finally { api.close() }
+})
+
+test('pr inspect recovers the PR by branch when the brief lost its pullRequest field', () => {
+  const root = fixture()
+  updateBrief(root, data => { data.github.repository = 'owner/repo'; data.github.pullRequest = null; data.branch = 'feat/sample' })
+  const found = { number: 12, state: 'closed', merged_at: '2026-10-09T00:00:00Z', html_url: 'https://github.test/pulls/12', base: { ref: 'main' } };
+  const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls?', body: [found] }])
+  try {
+    const result = run(['pr', 'inspect', '--name', 'sample', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(JSON.parse(result.stdout).data.number, 12)
+  } finally { api.close() }
+})
 test('publish defaults the PR body to Closes #N when the brief has an issue', () => {
   const root = fixture()
   addOrigin(root)
