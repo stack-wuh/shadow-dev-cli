@@ -4,7 +4,7 @@
   "name": "20261008-feature-artifact-capability-contract",
   "type": "feature",
   "scope": "lib/domains/workflow.mjs,lib/commands.mjs,test",
-  "status": "committed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "feature/20261008-feature-artifact-capability-contract",
   "files": [
@@ -20,10 +20,10 @@
   ],
   "github": {
     "repository": "stack-wuh/shadow-dev-cli",
-    "issue": null,
-    "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "issue": 46,
+    "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/46",
+    "pullRequest": 47,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/47"
   },
   "review": {
     "conclusion": "pending",
@@ -32,8 +32,8 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "58b95066b10aeb453a93729f696c33b9c619687b",
-    "planHash": "24c4bd33588df5a4f79098fb96d99ae381a58dfbf9954d1f3937644c69fef899",
+    "checkpoint": "pr:47",
+    "planHash": "01b4cf1b34bb1a0239df39c786f3177ce268555e95e73bf87ef0d56399e89194",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
