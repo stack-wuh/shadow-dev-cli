@@ -4,7 +4,7 @@
   "name": "20261008-feature-artifact-capability-contract",
   "type": "feature",
   "scope": "lib/domains/workflow.mjs,lib/commands.mjs,test",
-  "status": "published",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "feature/20261008-feature-artifact-capability-contract",
   "files": [
@@ -27,13 +27,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "9c0be16de3304ee4098c51c15d23aeeb6bc0f0b7",
-    "verifiedAt": "2026-10-09T00:25:17.196Z"
+    "verifiedCommit": "5dc4825d83f902a80845816291dd971816cd5728",
+    "verifiedAt": "2026-10-09T00:31:46.552Z"
   },
   "workflow": {
     "operation": null,
     "checkpoint": "pr:47",
-    "planHash": "91dc5d9f752e28033f8a0704ca2a31900e01ddf154f7a53b5534a577539fb0a5",
+    "planHash": "0ccd06d978d95ac31b3497ee583b05a0b029309989cc08b696260478fd08bddc",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -53,11 +53,9 @@
     },
     "release": {
       "files": [
-        "shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md",
-        "shadow-docs/knowledge/install-distribution.md",
-        "shadow-docs/menu.md"
+        "shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md"
       ],
-      "message": "docs(knowledge): 安装与分发卡收录 requiresCommands 能力契约 + menu 路由 (#46)",
+      "message": "docs(shadow): review 结论重钉至最终提交 5dc4825（CI run 37864859648 9/9）",
       "title": "[feature] 产物能力契约：workflow 产物自声明 requiresCommands，CLI 物化前断言 (#46)",
       "body": "Closes #46\n\n完整 brief：shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md"
     }
@@ -65,7 +63,7 @@
   "knowledge": {
     "action": "更新",
     "target": "shadow-docs/knowledge/install-distribution.md",
-    "reason": "产物消费契约由「三件必备」扩展为「三件必备 + 可选 requiresCommands 能力声明，缺省兼容」，并新增「物化/link 落盘前能力断言不可绕过」与「status 版本三元组可观测」两条执行约束；卡片验证方式经 CI 9/9 复证仍成立，属既有稳定事实的原位演进，不另立新卡"
+    "reason": "卡片已收录 requiresCommands 能力契约、落盘前断言不可绕过与 status 三元组；最终提交 5dc4825 的 CI（run 37864859648）9/9 通过，验证强度达 L 级期望的 runtime"
   }
 }
 ---
