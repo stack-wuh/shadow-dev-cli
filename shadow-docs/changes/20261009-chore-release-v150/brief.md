@@ -4,7 +4,7 @@
   "name": "20261009-chore-release-v150",
   "type": "chore",
   "scope": "packaging,install",
-  "status": "branched",
+  "status": "published",
   "baseBranch": "main",
   "branch": "chore/20261009-chore-release-v150",
   "files": [
@@ -16,8 +16,8 @@
     "repository": null,
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 48,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/48"
   },
   "review": {
     "conclusion": "pending",
@@ -26,7 +26,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
+    "checkpoint": "pr:48",
     "planHash": "84d2f51109394ba4522e501f2748d99f3c09c30c78a59a185510c04c78059b43",
     "updatedAt": null,
     "lastError": null,
