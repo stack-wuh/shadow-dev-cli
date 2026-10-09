@@ -4,7 +4,7 @@
   "name": "20261009-chore-release-v150",
   "type": "chore",
   "scope": "packaging,install",
-  "status": "published",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "chore/20261009-chore-release-v150",
   "files": [
@@ -20,27 +20,29 @@
     "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/48"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "0be15e953ca8a8bc943667e3e860470f0382e2ec",
+    "verifiedAt": "2026-10-09T14:11:37.246Z"
   },
   "workflow": {
     "operation": null,
     "checkpoint": "pr:48",
-    "planHash": "84d2f51109394ba4522e501f2748d99f3c09c30c78a59a185510c04c78059b43",
+    "planHash": "1ad4d8dcd1b91d0179f0a924dd70d5a0f5fdbe1e3419050ebce7f663a8272762",
     "updatedAt": null,
     "lastError": null,
     "release": {
       "files": [
-        "README.md",
-        "package.json",
-        "scripts/bootstrap.sh",
         "shadow-docs/changes/20261009-chore-release-v150/brief.md"
       ],
-      "message": "chore(release): v1.5.0——版本号与 bootstrap TAG、README 安装 URL 三处同源",
+      "message": "docs(shadow): review passed（S 级：diff 走查 + 结构扫描 + version 冒烟）",
       "title": "chore(release): v1.5.0 发版准备（版本号三处同源 bump）",
       "body": ""
     }
+  },
+  "knowledge": {
+    "action": "无需变更",
+    "target": null,
+    "reason": "纯版本号与安装 URL/TAG 三处同源同步，未产生新的长期事实；发布动作按 release 第 4 步委托用户/CI"
   }
 }
 ---
