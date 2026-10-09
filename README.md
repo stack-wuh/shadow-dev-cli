@@ -14,7 +14,7 @@ CLI 有两类用途，本文档按此组织：
 ### 新机器：一条命令装好整个生态
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/stack-wuh/shadow-dev-cli/v1.4.0/scripts/bootstrap.sh | bash -s claude-code
+curl -fsSL https://raw.githubusercontent.com/stack-wuh/shadow-dev-cli/v1.5.0/scripts/bootstrap.sh | bash -s claude-code
 ```
 
 这条命令做三件事：
