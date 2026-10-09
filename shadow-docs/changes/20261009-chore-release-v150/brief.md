@@ -4,7 +4,7 @@
   "name": "20261009-chore-release-v150",
   "type": "chore",
   "scope": "packaging,install",
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "chore/20261009-chore-release-v150",
   "files": [
