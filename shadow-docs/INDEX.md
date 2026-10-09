@@ -25,3 +25,4 @@
 | 20261008-feature-blog-publish-domain | ✅ 完成 | shadow-docs/changes/archive/20261008-feature-blog-publish-domain/brief.md |
 | 20261008-fix-brief-final-state-commit | ✅ 完成 | shadow-docs/changes/archive/20261008-fix-brief-final-state-commit/brief.md |
 | 20261008-fix-ci-bind-tar-harness | ✅ 完成 | shadow-docs/changes/archive/20261008-fix-ci-bind-tar-harness/brief.md |
+| 20261009-chore-release-v150 | ✅ 完成 | shadow-docs/changes/archive/20261009-chore-release-v150/brief.md |

@@ -4,7 +4,7 @@
   "name": "20261009-chore-release-v150",
   "type": "chore",
   "scope": "packaging,install",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "chore/20261009-chore-release-v150",
   "files": [
@@ -21,13 +21,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "0be15e953ca8a8bc943667e3e860470f0382e2ec",
-    "verifiedAt": "2026-10-09T14:11:37.246Z"
+    "verifiedCommit": "30812060b5adfde1d03cbf1d312c9d012d1dbfb4",
+    "verifiedAt": "2026-10-09T14:19:38.199Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:48",
-    "planHash": "1ad4d8dcd1b91d0179f0a924dd70d5a0f5fdbe1e3419050ebce7f663a8272762",
+    "checkpoint": "merged-pr:48",
+    "planHash": "c64f64c652ec274e85c62fd3619d8e2e2cf6935ceaa77593d13a7a398334fe4d",
     "updatedAt": null,
     "lastError": null,
     "release": {
@@ -42,7 +42,7 @@
   "knowledge": {
     "action": "无需变更",
     "target": null,
-    "reason": "纯版本号与安装 URL/TAG 三处同源同步，未产生新的长期事实；发布动作按 release 第 4 步委托用户/CI"
+    "reason": "交付发布完成：Release v1.5.0（tag @ 3081206，tarball 资产齐备）+ 装机端到端验收三条通过；结论已在 CI 中复证，无新增长期事实"
   }
 }
 ---
@@ -80,8 +80,18 @@ PR #47 已把「产物能力契约（requiresCommands 落盘前断言）+ worktr
 - 不动 workflow 仓（删 pin/hook/vendored installer、`adapters/codex.json`、`requiresCommands` 声明）——下一个 change
 
 ## 结果
-- 实际耗时: —
-- 验证: —
+
+- 实际耗时: ≈14 分钟（含一次 139 段错误重试、一次 `--confirm` 漏传返工、一次归档 push 失败恢复）
+- 验证（S 级＝diff 走查 + 结构/残留扫描 + 两条冒烟，与评级匹配）:
+  - `bash -n scripts/bootstrap.sh` 通过；`node cli.mjs version --json` → `1.5.0`；`workflow status --json`、`help workflow --json` 结构正常。
+  - 残留扫描：`grep -rn "1\.4\.0" test/ lib/` 为空——版本号无硬编码，全仓仅剩叙述性历史指称。
+  - CI（PR #48）合并前 checks **9/9 COMPLETED SUCCESS**（ubuntu/macos/windows × node 20/22/24）。
+- 交付发布（release 第 4 步，经用户明确授权后代跑）:
+  - PR **#48** squash 合入 main → `3081206`，远端分支已删除。
+  - **Release: https://github.com/stack-wuh/shadow-dev-cli/releases/tag/v1.5.0** — tag `v1.5.0` @ main、标记 Latest、资产 `shadow-dev-cli-v1.5.0.tar.gz`（46,951 B，命名符合安装器正则 `^shadow-dev-cli-v[0-9][0-9.]*\.tar\.gz$`，与 v1.4.0 资产先例同源）。
+  - 端到端装机（走用户真实路径 `install-cli.sh install --version v1.5.0`）：`CURRENT=1.5.0 / PREVIOUS=1.4.0`（可 rollback）、shim `shadow-dev version` → 1.5.0。
+  - 装机后三条证明：① 越权产物 `workflow plan` 透出 `missingCommands=['nope.does-not-exist','zzz.future.command']`，`workflow execute` → `ARTIFACT_INCOMPATIBLE`；② `worktree inspect` 由 `UNKNOWN_COMMAND` 变 `BRIEF_NOT_FOUND`（域已发布）；③ `workflow status` 回 `cliVersion=1.5.0 / artifactVersion / missingCommands=[]` 三元组。
+- 归档现场异常（真实缺陷，待独立 change）：`archive execute` 在物化+本地提交后 `git push` 失败返回 `GIT_PUSH_FAILED`（exit 3），而该命令**不可续跑**——重跑会在 `renameSync` 处因源目录已不存在而炸。本次恢复方式：补记结果段 → `git commit --amend`（改的是未推送的本地提交，不触碰共享历史）→ `git push origin main`。建议 CLI 把 archive 做成幂等（源目录缺失即视为已移动，只补 push），并把 push 前失败与 push 后失败分成两个错误码。
 
 ## 知识评估
 - **预期影响:** 无需变更
