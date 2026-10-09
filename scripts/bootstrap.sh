@@ -11,7 +11,7 @@
 #   SHADOW_WORKFLOW_HOME                宿主 home 根（bind 域，~/.claude/skills 等由此解析）
 set -euo pipefail
 
-TAG="v1.4.0"
+TAG="v1.5.0"
 HOST="${1:-claude-code}"
 BIN="${SD_BIN:-$HOME/.local/bin}"
 TMP="$(mktemp -d)"
