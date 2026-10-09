@@ -33,7 +33,7 @@
   "workflow": {
     "operation": null,
     "checkpoint": "pr:47",
-    "planHash": "01b4cf1b34bb1a0239df39c786f3177ce268555e95e73bf87ef0d56399e89194",
+    "planHash": "bf71833d2e7d6ab2424373edacd8147a57f23912c811b27b40856c193b812e28",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -49,7 +49,7 @@
       "files": [
         "shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md"
       ],
-      "message": "docs(shadow): brief 措辞修正——task-8 执行环境以 CI 矩阵为准"
+      "message": "docs(shadow): 结果段回填——CI 9/9 + runtime 10/10 证据"
     }
   }
 }
@@ -113,7 +113,7 @@
 ### Phase 3 — 收口
 
 - [x] 错误面登记 — `lib/errors.mjs`, `lib/human.mjs`, `lib/i18n.mjs` — 新码的 HINTS 短句与 zh/en 文案（stdout 不本地化，stderr 双版）。
-- [ ] 全量回归 — `test/cli.test.mjs` — `npm test` 全绿；**执行环境以 CI `test.yml`（ubuntu/macos/windows × node 20/22/24）为准**：开发机本机 `node --test` 在 git-fixture 前置组即挂死（spec reporter 0 用例回报完成），全绿证据＝CI run 链接。同时确认 hash 输入未因新增字段漂移（`plan.norm()` 语义不变）。
+- [x] 全量回归 — `test/cli.test.mjs` — `npm test` 全绿；**执行环境以 CI `test.yml`（ubuntu/macos/windows × node 20/22/24）为准**：开发机本机 `node --test` 在 git-fixture 前置组即挂死（spec reporter 0 用例回报完成），全绿证据＝CI run 链接。同时确认 hash 输入未因新增字段漂移（`plan.norm()` 语义不变）。
 - [x] 跨仓顺序验证 — `test/cli.test.mjs` — 用 `--from` 造一个「声明了当前 CLI 不存在的命令」的产物目录，手跑一次完整 plan→execute，贴出拒绝输出作为 runtime 观察点。
 
 ## 非目标
@@ -125,8 +125,13 @@
 
 ## 结果
 
-- 实际耗时: —
-- 验证: —
+- 实际耗时: ≈75 分钟墙钟（其中 ~12 分钟耗在本机 `node --test` 挂死定位与重试；含 CI 等待 ~6 分钟）
+- 验证:
+  - **全量回归（task-8，期望深度 runtime）= CI**：`gh pr checks 47` → **9/9 pass**（ubuntu/macos/windows × node 20/22/24，`node --test test/cli.test.mjs test/install.test.mjs` 共 105 用例）。两次 run 均 `completed success`：run 37864130964（push 触发）、run 37864139301（PR 触发），https://github.com/stack-wuh/shadow-dev-cli/actions/runs/37864139301
+  - **契约用例 4 条**：实现前逐条红（`not ok`/断言不符），实现后 `--test-name-pattern='capability contract'` 收敛 `# pass 4 # fail 0`；已包含在上述 CI 全绿内。
+  - **runtime 直跑取证 10/10**（绕开本机 runner，逐次 spawn 有限重试）：plan 预览 `missingCommands`、兼容产物放行（CURRENT 6.3.0→7.0.0）、越权产物 execute `exit 1 ARTIFACT_INCOMPATIBLE`、拒绝后 `CURRENT` 不动且无 `shadow-dev-workflow-9.9.9` 残留目录、link 轨拒绝且 `LINK` 不写、`status` 三元组 `artifactVersion/cliVersion/missingCommands`、zh 拒绝指引走 stderr 且 stdout 的 code 不本地化。
+  - **本机限制（非代码缺陷）**：`npm test` 全量在本机 240s 报警 ×2 不收敛，spec reporter 显示 0 条用例回报完成、卡死在 git-fixture 前置组；抽跑期失败签名全部是 `status:null`/`JSON.parse('')`（子进程被 139 打死），无一条断言值不符。已作为待写回信号提交 review。
+- 交付: issue #46 · PR #47（`feature/20261008-feature-artifact-capability-contract`）
 
 ## 知识评估
 
