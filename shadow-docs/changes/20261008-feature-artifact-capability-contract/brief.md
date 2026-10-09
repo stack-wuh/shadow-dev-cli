@@ -4,7 +4,7 @@
   "name": "20261008-feature-artifact-capability-contract",
   "type": "feature",
   "scope": "lib/domains/workflow.mjs,lib/commands.mjs,test",
-  "status": "committed",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "feature/20261008-feature-artifact-capability-contract",
   "files": [
@@ -26,14 +26,14 @@
     "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/47"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "9c0be16de3304ee4098c51c15d23aeeb6bc0f0b7",
+    "verifiedAt": "2026-10-09T00:25:17.196Z"
   },
   "workflow": {
     "operation": null,
     "checkpoint": "8b93e094164c399fbb9d06877d6b6d1dd1abf092",
-    "planHash": "bf71833d2e7d6ab2424373edacd8147a57f23912c811b27b40856c193b812e28",
+    "planHash": "91dc5d9f752e28033f8a0704ca2a31900e01ddf154f7a53b5534a577539fb0a5",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -50,7 +50,22 @@
         "shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md"
       ],
       "message": "docs(shadow): 结果段回填——CI 9/9 + runtime 10/10 证据"
+    },
+    "release": {
+      "files": [
+        "shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md",
+        "shadow-docs/knowledge/install-distribution.md",
+        "shadow-docs/menu.md"
+      ],
+      "message": "docs(knowledge): 安装与分发卡收录 requiresCommands 能力契约 + menu 路由 (#46)",
+      "title": "[feature] 产物能力契约：workflow 产物自声明 requiresCommands，CLI 物化前断言 (#46)",
+      "body": "Closes #46\n\n完整 brief：shadow-docs/changes/20261008-feature-artifact-capability-contract/brief.md"
     }
+  },
+  "knowledge": {
+    "action": "更新",
+    "target": "shadow-docs/knowledge/install-distribution.md",
+    "reason": "产物消费契约由「三件必备」扩展为「三件必备 + 可选 requiresCommands 能力声明，缺省兼容」，并新增「物化/link 落盘前能力断言不可绕过」与「status 版本三元组可观测」两条执行约束；卡片验证方式经 CI 9/9 复证仍成立，属既有稳定事实的原位演进，不另立新卡"
   }
 }
 ---
@@ -132,6 +147,10 @@
   - **runtime 直跑取证 10/10**（绕开本机 runner，逐次 spawn 有限重试）：plan 预览 `missingCommands`、兼容产物放行（CURRENT 6.3.0→7.0.0）、越权产物 execute `exit 1 ARTIFACT_INCOMPATIBLE`、拒绝后 `CURRENT` 不动且无 `shadow-dev-workflow-9.9.9` 残留目录、link 轨拒绝且 `LINK` 不写、`status` 三元组 `artifactVersion/cliVersion/missingCommands`、zh 拒绝指引走 stderr 且 stdout 的 code 不本地化。
   - **本机限制（非代码缺陷）**：`npm test` 全量在本机 240s 报警 ×2 不收敛，spec reporter 显示 0 条用例回报完成、卡死在 git-fixture 前置组；抽跑期失败签名全部是 `status:null`/`JSON.parse('')`（子进程被 139 打死），无一条断言值不符。已作为待写回信号提交 review。
 - 交付: issue #46 · PR #47（`feature/20261008-feature-artifact-capability-contract`）
+- 信号提案（review 第 9 项，**随本 change 输出但不在本 change 落文件**——CLI 仓尚无 `shadow-docs/signals.md`，建档需独立小 change，遵守「只修改 brief 声明文件」）：
+  1. negative · 权重 3 · 深度 runtime · 域/scope：验证工具链 · 本仓测试。`node --test` 全量在开发机不可信：139 段错误使被 spawn 的 CLI 子进程返回 `status:null`（表现为 `JSON.parse('')` 假失败），runner 还可能整体挂死（spec reporter 0 用例回报）。**且绝不要用 `out=$(node --test …)` 收集**——子进程被信号打死时孤儿子进程仍持有管道写端，命令替换永不返回（本 change 实踩两次，各白等约 5 分钟）。改法：`perl -e 'alarm N; exec @ARGV'` 加界 + 输出重定向到文件 + 全量回归以 CI `test.yml` 为准。退役条件：换机/Node 升级后 139 消失，或测试改为不 spawn 子进程。
+  2. negative · 权重 2 · 深度 unit · 域/scope：CLI 自身开发 · 命令入口。`shadow-dev` shim 解析到**已装版本**（本次 1.4.0），不是工作树代码——1.4.0 缺 PR #45「execute 端点零 dirty」，用它跑 `commit` 会残留脏 brief，需额外一条 commit 收口。改法：本仓自测一律 `node cli.mjs …`，或先 `bash scripts/install-cli.sh link <本仓>` 把 shim 钉到工作树。退役条件：发布 v1.5.0 且本机 shim ≥ v1.5.0。
+  3. negative · 权重 2 · 深度 unit · 域/scope：Knowledge/brief 编辑 · `shadow-docs/changes/*/brief.md`。brief 正文与 frontmatter 的 `workflow.issuePlan.body` 是**同一份散文的两处副本**，对任务行做字符串替换会先命中快照（文件里快照在正文之前）；本 change 实踩过一次。改法：替换须锚定 frontmatter 之外的正文区间，改完再跑一次 `issue plan` 让快照按正文重渲染。退役条件：issue 快照不再内嵌正文全文。
 
 ## 知识评估
 
