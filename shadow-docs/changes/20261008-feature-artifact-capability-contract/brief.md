@@ -4,7 +4,7 @@
   "name": "20261008-feature-artifact-capability-contract",
   "type": "feature",
   "scope": "lib/domains/workflow.mjs,lib/commands.mjs,test",
-  "status": "published",
+  "status": "committed",
   "baseBranch": "main",
   "branch": "feature/20261008-feature-artifact-capability-contract",
   "files": [
@@ -32,7 +32,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:47",
+    "checkpoint": "8b93e094164c399fbb9d06877d6b6d1dd1abf092",
     "planHash": "bf71833d2e7d6ab2424373edacd8147a57f23912c811b27b40856c193b812e28",
     "updatedAt": null,
     "lastError": null,
