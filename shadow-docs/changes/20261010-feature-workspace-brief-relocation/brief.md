@@ -35,14 +35,14 @@
   "workflow": {
     "operation": null,
     "checkpoint": "7321f172926a11cc2c30f664bdb8ae3dc9821d44",
-    "planHash": "2e5d1e50ee47fc930ef8ec287fa651efdd26cc7fca12c76130876b424cc9fc37",
+    "planHash": "ae2f221c82db5cefd594293287aeb7469c38ee40ddc839e917e7efdf7f0c2e45",
     "updatedAt": null,
     "lastError": null,
     "commit": {
       "files": [
         "shadow-docs/changes/20261010-feature-workspace-brief-relocation/brief.md"
       ],
-      "message": "docs(shadow): 记录任务进度与 blocked 被机械门禁拒绝的事实"
+      "message": "docs(shadow): 记录 review 机械门禁不区分结论的事实"
     }
   }
 }
@@ -155,6 +155,10 @@
 - **brief 正文编辑锚点再次误命中 frontmatter**：`issuePlan.body` 里含同名正文快照。已固化为「先按 `\n---\n` 切出正文、再在正文里定位锚点」，本轮全部编辑走该切分，未再破坏受管字段。
 - **`check` 类命令一次误用**：`commit plan` 后直接 `release execute` 触发 `PLAN_HASH_INVALID`（planHash 属各自域命名空间），重跑 `release plan` 即恢复。
 - 为赶进度主动跳过全量测试属**本次授权的范围缩减**，不是验证通过；上面第 1 条按「未验证」处理，不写成「应该没问题」。
+
+### 门禁自身的一条反馈（写给下一个执行者）
+
+`review execute` 的机械门禁 **不区分结论**：`--conclusion blocked` 同样被 `TASKS_NOT_COMPLETE` 拒绝。于是「任务未全完成但已提交 WIP」这种真实状态无法写进受管字段（本 brief 的 `review.conclusion` 只能停在 `pending`），只能通过正文与 commit message 承载。若后续要支持 WIP 审查，需要执行层放开 blocked/pending 的任务门（仅 `passed` 要求全勾）。
 
 ### 遗留与后续
 
