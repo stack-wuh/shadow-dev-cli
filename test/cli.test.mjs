@@ -204,6 +204,93 @@ test('change approve transitions draft to proposed', () => {
   assert.match(readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8'), /"status": "proposed"/)
 })
 
+// I1 + 命令面：扩面必作废 passed review，并让归档门随即拒绝——不作废就等于给 archive 开旁路
+test('change amend replaces the declared file set and voids a passed review', () => {
+  const root = fixture()
+  updateBrief(root, data => { data.github.repository = 'owner/repo'; data.github.pullRequest = 7; data.status = 'reviewed'; data.review = { conclusion: 'passed', verifiedCommit: 'deadbeef', verifiedAt: 'then' } })
+  const result = run(['change', 'amend', '--name', 'sample', '--files', 'src/example.js,src/extra.js', '--confirm', '--json'], root)
+  assert.equal(result.status, 0, result.stderr)
+  const d = JSON.parse(result.stdout).data
+  assert.equal(JSON.parse(result.stdout).command, 'change.amend')
+  assert.deepEqual(d.files, ['src/example.js', 'src/extra.js'])
+  assert.deepEqual(d.added, ['src/extra.js'])
+  assert.deepEqual(d.removed, [])
+  assert.equal(d.changed, true)
+  assert.equal(d.reviewReset, true)
+  assert.equal(d.nextStep, 'review plan --name sample')
+  const text = readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8')
+  assert.match(text, /"conclusion": "pending"/)
+  assert.match(text, /"verifiedCommit": null/)
+  assert.match(run(['--help']).stdout, /change create\|approve\|amend\|list/, 'the command stays in the derived help group')
+  const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls/7', body: { number: 7, merged: true, merged_at: 'now' } }])
+  try {
+    const archive = run(['archive', 'plan', '--name', 'sample', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
+    assert.equal(archive.status, 1)
+    assert.equal(JSON.parse(archive.stdout).error.code, 'REVIEW_NOT_PASSED')
+  } finally { api.close() }
+})
+
+// I2：无差异不写盘、不动 review（与 briefStateCommit「无差异不造空提交」同源）
+test('change amend is idempotent when nothing changes', () => {
+  const root = fixture()
+  updateBrief(root, data => { data.review = { conclusion: 'passed', verifiedCommit: 'deadbeef', verifiedAt: 'then' } })
+  const path = join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')
+  const before = readFileSync(path, 'utf8')
+  const result = run(['change', 'amend', '--name', 'sample', '--files', 'src/example.js', '--scope', 'core', '--confirm', '--json'], root)
+  assert.equal(result.status, 0, result.stderr)
+  const d = JSON.parse(result.stdout).data
+  assert.equal(d.changed, false)
+  assert.equal(d.reviewReset, false)
+  assert.equal(d.nextStep, null)
+  assert.equal(readFileSync(path, 'utf8'), before, 'a no-diff amend must not rewrite the brief')
+})
+
+// I3 + I5：全集替换语义、反斜杠归一、差量输出，且扩面后的集合立刻参与重叠判定
+test('change amend reports added and removed with normalized paths and feeds conflict inspect', () => {
+  const root = fixture()
+  const grown = run(['change', 'amend', '--name', 'sample', '--files', 'lib\\a.js,src/example.js', '--confirm', '--json'], root)
+  assert.equal(grown.status, 0, grown.stderr)
+  const added = JSON.parse(grown.stdout).data
+  assert.deepEqual(added.files, ['lib/a.js', 'src/example.js'])
+  assert.deepEqual(added.added, ['lib/a.js'])
+  assert.deepEqual(added.removed, [])
+  assert.equal(added.nextStep, 'conflict inspect --name sample')
+  const shrunk = JSON.parse(run(['change', 'amend', '--name', 'sample', '--files', 'lib/a.js', '--confirm', '--json'], root).stdout).data
+  assert.deepEqual(shrunk.removed, ['src/example.js'])
+  assert.deepEqual(shrunk.files, ['lib/a.js'])
+  mkdirSync(join(root, 'shadow-docs', 'changes', 'other'), { recursive: true })
+  const source = readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8').replace('"name": "sample"', '"name": "other"')
+  writeFileSync(join(root, 'shadow-docs', 'changes', 'other', 'brief.md'), source)
+  const conflict = run(['conflict', 'inspect', '--name', 'other', '--json'], root)
+  assert.equal(conflict.status, 0, conflict.stderr)
+  assert.deepEqual(JSON.parse(conflict.stdout).data.overlaps, [{ change: 'sample', files: ['lib/a.js'] }])
+})
+
+// I4：读容忍 CRLF、写回恒 LF
+test('change amend writes the brief back as LF from a CRLF file', () => {
+  const root = fixture()
+  const path = join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')
+  writeFileSync(path, readFileSync(path, 'utf8').replaceAll('\n', '\r\n'))
+  const result = run(['change', 'amend', '--name', 'sample', '--files', 'src/example.js,src/extra.js', '--confirm', '--json'], root)
+  assert.equal(result.status, 0, result.stderr)
+  const raw = readFileSync(path, 'utf8')
+  assert.ok(!raw.includes('\r'), 'amend must normalize the rewritten brief to LF')
+  assert.match(raw, /"src\/extra\.js"/)
+})
+
+// I6：空集与缺确认一律拒绝（凭证类退出码 2）
+test('change amend refuses an empty file set and a missing confirmation', () => {
+  const root = fixture()
+  for (const args of [['change', 'amend', '--name', 'sample', '--confirm', '--json'], ['change', 'amend', '--name', 'sample', '--files', '', '--confirm', '--json']]) {
+    const result = run(args, root)
+    assert.equal(result.status, 2)
+    assert.equal(JSON.parse(result.stdout).error.code, 'AMEND_INPUT_REQUIRED')
+  }
+  const noConfirm = run(['change', 'amend', '--name', 'sample', '--files', 'src/example.js,src/x.js', '--json'], root)
+  assert.equal(noConfirm.status, 2)
+  assert.equal(JSON.parse(noConfirm.stdout).error.code, 'CONFIRMATION_REQUIRED')
+})
+
 test('change list enumerates active briefs and skips archive and unreadable dirs', () => {
   const root = fixture()
   const result = run(['change', 'list'], root)

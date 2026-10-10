@@ -7,7 +7,8 @@ status: active
 source:
   - changes/20260917-fix-plan-credential-chain/brief.md
   - changes/20260925-fix-cli-silent-failures/brief.md
-verified: 2026-09-25
+  - changes/20261010-feature-brief-scope-amend/brief.md
+verified: 2026-10-10
 ---
 
 # plan/execute 凭证链与哈希边界
@@ -25,7 +26,7 @@ verified: 2026-09-25
 
 ## 适用边界
 
-适用于所有走 `DOMAINS` 统一通道的 plan/execute 命令域。不适用于直接命令（`change create/approve`、`task set`、`repo inspect`），它们无哈希凭证。
+适用于所有走 `DOMAINS` 统一通道的 plan/execute 命令域。不适用于直接命令（`change create/approve/amend`、`task set`、`repo inspect`），它们无哈希凭证。`change amend` 同属该族：它只重写 brief 的声明文件集与 scope、无外部副作用，因此不进 DOMAINS 通道、不产生 planHash、也不需要 `persistPlan`/`norm`/回退读取三处同步。
 
 ## 验证方式
 
