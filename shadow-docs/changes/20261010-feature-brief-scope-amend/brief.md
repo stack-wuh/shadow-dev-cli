@@ -4,7 +4,7 @@
   "name": "20261010-feature-brief-scope-amend",
   "type": "feature",
   "scope": "cli-infrastructure",
-  "status": "published",
+  "status": "committed",
   "baseBranch": "main",
   "branch": "feature/20261010-feature-brief-scope-amend",
   "files": [
@@ -33,7 +33,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:50",
+    "checkpoint": "44629d89d7a0d5c7f33e0465476f6be2a9750f77",
     "planHash": "6c4f6da75d3061ae8be3ac62dc864aed76de47890858144e23c5f96903ff6337",
     "updatedAt": null,
     "lastError": null,
