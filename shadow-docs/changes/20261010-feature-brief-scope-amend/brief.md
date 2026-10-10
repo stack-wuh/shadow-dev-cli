@@ -4,7 +4,7 @@
   "name": "20261010-feature-brief-scope-amend",
   "type": "feature",
   "scope": "cli-infrastructure",
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "feature/20261010-feature-brief-scope-amend",
   "files": [
@@ -23,8 +23,8 @@
     "repository": null,
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 50,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/50"
   },
   "review": {
     "conclusion": "passed",
@@ -33,7 +33,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
+    "checkpoint": "pr:50",
     "planHash": "b8527fafa8e0f6b6739da5dd05e7f11ec966d54cd9bb044e17d13cebf2aba64a",
     "updatedAt": null,
     "lastError": null,
