@@ -164,7 +164,7 @@ shadow-dev issue execute --name <名称> --confirm
 
 | 命令 | 作用 |
 |------|------|
-| `change create \| approve \| amend \| list` | 创建 / 批准变更 brief；`amend` 登记实现期扩面；`list` 列变更（`--all` 含归档、`--archived` 只列归档） |
+| `change create \| approve \| amend \| list` | 创建 / 批准变更 brief；`amend` 登记实现期扩面与纠偏（`--files` 全集、`--scope`、`--base-branch`）；`list` 列变更（`--all` 含归档、`--archived` 只列归档） |
 | `branch plan \| execute` | 从基线分支建功能分支 |
 | `sync plan \| execute` | fast-forward 同步上游（分叉时拒绝自动合并） |
 | `conflict inspect` | 检查活动变更间的文件重叠 |
@@ -211,7 +211,7 @@ shadow-dev issue execute --name <名称> --confirm
 | 码 | 含义 | 典型错误码 |
 |----|------|-----------|
 | 0 | 成功 | — |
-| 1 | 输入/校验错误 | `PLAN_HASH_INVALID`、`BRIEF_NOT_FOUND`、`NAME_REQUIRED`、`TASKS_NOT_COMPLETE`、`REVIEW_NOT_PASSED`、`PR_NOT_MERGED`、`ARTIFACT_INVALID`、`ARTIFACT_INCOMPATIBLE`、`UNMANAGED_TARGET`、`BLOG_FILE_NOT_FOUND`、`BLOG_TITLE_REQUIRED` |
+| 1 | 输入/校验错误 | `PLAN_HASH_INVALID`、`BRIEF_NOT_FOUND`、`NAME_REQUIRED`、`TASKS_NOT_COMPLETE`、`REVIEW_NOT_PASSED`、`PR_NOT_MERGED`、`ARTIFACT_INVALID`、`ARTIFACT_INCOMPATIBLE`、`UNMANAGED_TARGET`、`BLOG_FILE_NOT_FOUND`、`BLOG_TITLE_REQUIRED`、`INVALID_BASE_BRANCH` |
 | 2 | 缺少确认或凭证 | `CONFIRMATION_REQUIRED`、`PLAN_HASH_REQUIRED`、`BLOG_FILE_REQUIRED`、`AMEND_INPUT_REQUIRED` |
 | 3 | 外部系统失败 | `GITHUB_TOKEN_REQUIRED`、`GITHUB_API_ERROR`、`API_TIMEOUT`、`GIT_PUSH_FAILED`、`DOWNLOAD_FAILED`、`RELEASE_NOT_FOUND` |
 | 4 | 不支持的操作 | `UNSUPPORTED_OPERATION`（如 `git add .`、绝对路径） |

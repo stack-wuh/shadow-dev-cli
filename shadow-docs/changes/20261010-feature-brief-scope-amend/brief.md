@@ -34,7 +34,7 @@
   "workflow": {
     "operation": null,
     "checkpoint": "pr:50",
-    "planHash": "c2739d5ab3ab83a151ef840d82c0cc17634c8a1f5f3e07e98d54354814aac3b2",
+    "planHash": "6c4f6da75d3061ae8be3ac62dc864aed76de47890858144e23c5f96903ff6337",
     "updatedAt": null,
     "lastError": null,
     "release": {
@@ -56,9 +56,13 @@
     },
     "commit": {
       "files": [
+        "README.md",
+        "lib/commands.mjs",
+        "lib/domains/change.mjs",
+        "lib/i18n.mjs",
         "shadow-docs/changes/20261010-feature-brief-scope-amend/brief.md"
       ],
-      "message": "docs(shadow): 回填 PR #50 三平台 CI 证据——windows 9/9 pass 坐实本机 bash 为环境前置"
+      "message": "feat(change): amend 增 --base-branch 纠偏，解掉 PR 复用与归档证据的锁死点"
     }
   },
   "knowledge": {
@@ -197,6 +201,15 @@ task-2 原文写「静态 nextStep 指向 `commit plan`（动态 `nextStep` 由�
 ### 生命周期状态
 
 `change create` → `change approve`（proposed）→ `branch execute`（`feature/20261010-feature-brief-scope-amend`；M 级按 `worktree inspect` 的 `recommendation:"inline"` 走分支，不建 worktree）→ 实现 → `change amend` 自登记扩面 → 全量取证。
+
+## Phase 4 追加：`--base-branch` 纠偏能力（推翻原「不开放 baseBranch」的决定）
+
+- **触发事实**：在 `shadow-dev-workflow` 给 PR #44 推 CI 修复时，`publish` 没复用 #44 而是新建了 PR #45。根因在 `lib/github.mjs` 的 `findPr(repository, branch, baseBranch)` **按 base 过滤候选**，而那条 brief 声明的 `baseBranch` 是堆叠上游分支 `build/…`，PR #44 的 base 是 `main` → 被设计性排除。
+- **为什么推翻原决定**：立项时我以「改了会与已建分支/PR base 不一致」排除 `--base-branch`。事实相反——**`baseBranch` 写错时唯一出路就是改它**：不改则 `publish` 永远找不到那条 PR（且会重复开 PR）、`archive` 永远拿不到 merged 证据（`PULL_REQUEST_REQUIRED`/`PR_NOT_MERGED`），而手改 frontmatter 属受管状态禁令。原决定等于把使用者锁在自己修不了的错误里。
+- **实现与拒绝路径（本机真实输出）**：与现值相同 → 幂等 `changed:false` 不写盘；等于变更自身分支名 → `INVALID_BASE_BRANCH: --base-branch must differ from the change branch feature/…`；空白 → 同码 `must not be empty`；命令目录与 help 已含新参数：`flags: --name --files --scope --base-branch --confirm`。
+- **不自欺设计**：`baseBranch` 实际变更且 brief 已关联 PR 时，输出带 `warnings`，要求去 GitHub 改该 PR 的 base 或关闭它——`findPr` 的过滤条件不会因声明改了而迁移历史 PR，静默改基线只会把不一致留给下一次 `publish`。
+- **文件集未扩**：本追加全落在原声明的 10 个文件内，无需再次 amend。
+- **按用户指令未新增测试文件**：上述四条路径以本机真跑为证据；回归依赖 CI 三平台矩阵跑既有 104+8 例（判据＝新增参数不破坏既有用例）。
 
 ## 知识评估
 
