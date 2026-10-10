@@ -35,19 +35,14 @@
   "workflow": {
     "operation": null,
     "checkpoint": "117ac44ac77dd4f5f774cca323f079e82ec34e8e",
-    "planHash": "cfbedf489b638e9e9811380b177c2f73767f531d25008ed17dcdadcb6487dc63",
+    "planHash": "2e5d1e50ee47fc930ef8ec287fa651efdd26cc7fca12c76130876b424cc9fc37",
     "updatedAt": null,
     "lastError": null,
     "commit": {
       "files": [
-        "cli.mjs",
-        "lib/commands.mjs",
-        "lib/domains/change.mjs",
-        "lib/domains/worktree.mjs",
-        "shadow-docs/changes/20261010-feature-workspace-brief-relocation/brief.md",
-        "test/cli.test.mjs"
+        "shadow-docs/changes/20261010-feature-workspace-brief-relocation/brief.md"
       ],
-      "message": "feat(worktree): brief 随 workspace 迁移并新增 change amend 范围修订（待 CI 全绿才可合并）"
+      "message": "docs(shadow): 记录任务进度与 blocked 被机械门禁拒绝的事实"
     }
   }
 }
