@@ -4,7 +4,7 @@
   "name": "20261010-feature-workspace-brief-relocation",
   "type": "feature",
   "scope": "cli-infrastructure",
-  "status": "branched",
+  "status": "committed",
   "baseBranch": "main",
   "branch": "feature/20261010-feature-workspace-brief-relocation",
   "files": [
@@ -34,7 +34,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
+    "checkpoint": "117ac44ac77dd4f5f774cca323f079e82ec34e8e",
     "planHash": "cfbedf489b638e9e9811380b177c2f73767f531d25008ed17dcdadcb6487dc63",
     "updatedAt": null,
     "lastError": null,
