@@ -34,7 +34,7 @@
   "workflow": {
     "operation": null,
     "checkpoint": "pr:50",
-    "planHash": "b8527fafa8e0f6b6739da5dd05e7f11ec966d54cd9bb044e17d13cebf2aba64a",
+    "planHash": "7b967ab023c780628cfdf25e973f458d3c59d3a99cd2b18a132ef88b3fe5a8fe",
     "updatedAt": null,
     "lastError": null,
     "release": {
@@ -53,6 +53,12 @@
       "message": "feat(change): 实现期扩面登记命令 change amend——扩面必作废 passed review",
       "title": "feat(change): 实现期扩面登记 change amend + 归档门旁路防护",
       "body": ""
+    },
+    "commit": {
+      "files": [
+        "shadow-docs/changes/20261010-feature-brief-scope-amend/brief.md"
+      ],
+      "message": "docs(shadow): 回填 PR #50 三平台 CI 证据——windows 9/9 pass 坐实本机 bash 为环境前置"
     }
   },
   "knowledge": {
@@ -177,7 +183,7 @@
 
 - 本机 `bash` 解析到 `C:\Windows\system32\bash.exe`（WSL，未安装任何发行版）；直接跑 `bash -c "tar -czf …"` → 退出码 1；原生 `tar.exe` 干同一活 → 退出码 0、产物生成。
 - 同因使 `install.test.mjs` 全部 8 例 `# SKIP bash unavailable`。两者早于本 change 存在（上一 change 的 brief 已记「install-cli 7 例本机不可取证——沙箱禁网」，属同族环境缺口）。
-- **替代观察点**：`shadow-dev-workflow` #43 引入的 `quality-gate.yml`（ubuntu/macos/windows × node 20/22，含 `npm test`）即本项合法 runtime 证据，待该 workflow 与本 PR 落地后以 run 链接回填。
+- **替代观察点（已回填）**：本 PR 的 CI run [38035086789](https://github.com/stack-wuh/shadow-dev-cli/actions/runs/38035086789) → `test` 矩阵 **9/9 pass**（ubuntu/macos/windows × node 20/22/24，`pass=9 fail=0`）。windows 三项通过即反向坐实本机判红的唯一成因是「PATH 上 `bash` 解析到无发行版的 WSL」而非本 change 的代码——有 Git Bash 的环境里同一条 fixture 正常执行。本机 `install.test.mjs` 8 例仍为 `# SKIP bash unavailable`。
 
 ### 顺带发现的两处既有弱点（不在本 change 处置，另立）
 
