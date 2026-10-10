@@ -6,7 +6,8 @@ scope: [lib/steps.mjs, lib/domains/commit.mjs, lib/domains/publish.mjs, lib/doma
 status: active
 source:
   - changes/20261008-fix-brief-final-state-commit/brief.md
-verified: 2026-10-08
+  - changes/20261010-feature-brief-scope-amend/brief.md
+verified: 2026-10-10
 verified-depth: runtime
 ---
 
@@ -25,7 +26,7 @@ verified-depth: runtime
 
 ## 适用边界
 
-适用于四域 execute 对 `shadow-docs/changes/**/brief.md` 的提交语义；不适用于 `task set`/`change create` 等直接命令（无 commit 职责），不适用于 INDEX 与归档目录移动（由 archive execute 自身 staged 清单负责）。
+适用于四域 execute 对 `shadow-docs/changes/**/brief.md` 的提交语义；不适用于 `task set`/`change create`/`change amend` 等直接命令（无 commit 职责），不适用于 INDEX 与归档目录移动（由 archive execute 自身 staged 清单负责）。`change amend` 的「无实际差异即不写盘」与本域「无差异返回 null 不造空 commit」是同一条纪律的两种落点。
 
 ## 验证方式
 

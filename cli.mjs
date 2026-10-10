@@ -79,6 +79,7 @@ async function handle(r, p, o) {
   if (d === 'task' && a === 'set') return { ok: true, command: 'task.set', data: task.set(r, o) }
   if (d === 'change' && a === 'create') return { ok: true, command: 'change.create', data: change.create(r, o) }
   if (d === 'change' && a === 'approve') return { ok: true, command: 'change.approve', data: change.approve(r, o) }
+  if (d === 'change' && a === 'amend') return { ok: true, command: 'change.amend', data: change.amend(r, o) }
   if (d === 'change' && a === 'list') return { ok: true, command: 'change.list', data: change.list(r, o) }
   // 生态分发域：宿主无关、不要求 git 仓库，r 允许为 null
   if (d === 'workflow') return await workflow.handle(a, o)
