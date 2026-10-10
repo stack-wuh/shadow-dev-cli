@@ -41,7 +41,7 @@ async function executeDomain(c, mod, r, o) {
     if (!o['plan-hash']) throw err('PLAN_HASH_REQUIRED', 'PLAN_HASH_REQUIRED', 2)
     return mod.execute(r, o, e.data)
   }
-  const b = brief(r, name(o))
+  const b = readBrief(mod, r, o)
   if (b.data.workflow.planHash !== e.planHash) {
     const stale = !!b.data.workflow.planHash
     throw err(stale ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED', stale ? 'PLAN_HASH_INVALID' : 'PLAN_HASH_REQUIRED', stale ? 1 : 2)
@@ -49,12 +49,16 @@ async function executeDomain(c, mod, r, o) {
   return mod.execute(r, o, e.data, b)
 }
 
+// 域可导出 locateBrief(r, o)：brief 可能已被迁进专属 workspace（见 worktree 域）。
+// harness 若硬用 cwd 所在树读，跨树回收会在进入域逻辑之前就 BRIEF_NOT_FOUND。
+const readBrief = (mod, r, o) => (mod.locateBrief ? mod.locateBrief(r, o) : brief(r, name(o)))
+
 // 域可导出 present(x) 声明 stdout data 的最小投影（哈希/持久化仍用完整 planData）；缺省恒等
 async function planDomain(c, mod, r, o) {
   const e = plan(c, await mod.planData(r, o))
   const view = mod.present ? { ...e, data: mod.present(e.data) } : e
   if (!o.name) return view
-  const b = brief(r, name(o))
+  const b = readBrief(mod, r, o)
   b.data.workflow.planHash = e.planHash
   mod.persistPlan?.(b, e)
   write(b)
@@ -80,6 +84,7 @@ async function handle(r, p, o) {
   if (d === 'change' && a === 'create') return { ok: true, command: 'change.create', data: change.create(r, o) }
   if (d === 'change' && a === 'approve') return { ok: true, command: 'change.approve', data: change.approve(r, o) }
   if (d === 'change' && a === 'list') return { ok: true, command: 'change.list', data: change.list(r, o) }
+  if (d === 'change' && a === 'amend') return { ok: true, command: 'change.amend', data: change.amend(r, o) }
   // 生态分发域：宿主无关、不要求 git 仓库，r 允许为 null
   if (d === 'workflow') return await workflow.handle(a, o)
   if (d === 'bind') return await bind.handle(a, o)
@@ -87,7 +92,7 @@ async function handle(r, p, o) {
   if (Object.hasOwn(DOMAINS, d)) {
     const nested = a === 'rebuild' || d === 'blog' || (d === 'worktree' && a === 'remove')
     const verb = nested ? s : a, c = nested ? `${d}.${a}` : d
-    const mod = d === 'worktree' && a === 'remove' ? { planData: worktree.removePlanData, present: worktree.removePresent, execute: worktree.removeExecute } : DOMAINS[d]
+    const mod = d === 'worktree' && a === 'remove' ? { planData: worktree.removePlanData, present: worktree.removePresent, execute: worktree.removeExecute, locateBrief: worktree.locateBrief } : DOMAINS[d]
     if (verb === 'plan') return await planDomain(c, mod, r, o)
     if (verb === 'execute') return { ok: true, command: `${c}.execute`, data: await executeDomain(c, mod, r, o) }
   }
