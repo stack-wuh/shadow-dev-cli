@@ -4,7 +4,7 @@
   "name": "20261010-fix-worktree-uncommitted-brief",
   "type": "fix",
   "scope": "cli-infrastructure",
-  "status": "committed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "fix/20261010-fix-worktree-uncommitted-brief",
   "files": [
@@ -22,8 +22,8 @@
     "repository": null,
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 51,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/51"
   },
   "review": {
     "conclusion": "passed",
@@ -32,8 +32,8 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "fb0d28ca70b0064b872d4bbfaaec8644728a9f91",
-    "planHash": "0cf18aee99aeb7a3d1b0fc79d7e4f45e45eab0781135693c018b2045095919e1",
+    "checkpoint": "pr:51",
+    "planHash": "8b11d34cd0b6355571c9bd3f9d0f498fe5030e6746ef00710ee69a338b3fccac",
     "updatedAt": null,
     "lastError": null,
     "commit": {
