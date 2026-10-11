@@ -4,7 +4,7 @@
   "name": "20261010-fix-worktree-uncommitted-brief",
   "type": "fix",
   "scope": "cli-infrastructure",
-  "status": "reviewed",
+  "status": "committed",
   "baseBranch": "main",
   "branch": "fix/20261010-fix-worktree-uncommitted-brief",
   "files": [
@@ -32,7 +32,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:52",
+    "checkpoint": "99d3d1640254b50b131e03e9d175baec1d5bd547",
     "planHash": "0ea325b99e314d34a79aa2703cd4ee674a36e211813abb6e7af8087aa55f7aa2",
     "updatedAt": null,
     "lastError": null,
