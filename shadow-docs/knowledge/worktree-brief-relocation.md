@@ -7,8 +7,8 @@ status: active
 source:
   - changes/20261010-fix-worktree-uncommitted-brief/brief.md
 verified: 2026-10-11
-verified-depth: unit
-verified-scope: 待 Phase 2 全量测试收敛后按实际深度更新（本机 node --test 受 139 段错误风暴干扰，需禁编译缓存 + 串行重试）
+verified-depth: runtime
+verified-scope: 真实 CLI 端到端 7 步（临时 git 仓）——relocated=true、主树无副本、工作树内 task list 可读、remove plan dirty=false、relocatedBack=true、worktree 字段归零、真实用户改动仍判 WORKTREE_DIRTY；另有 CI 全量：PR #51 的 test 流水 9/9 job 绿（ubuntu/macos/windows × node 20/22/24，run 38129275515，108+8 用例）。本机 139 段错误造成的分片失败（4 条 null 状态）已被 CI 反证为环境噪声
 ---
 
 # brief 随专属 workspace 迁移与归属树
