@@ -20,7 +20,7 @@ verified-depth: runtime
 ## 执行约束
 
 - 新增写 brief 的 execute 域：`write(b)` 之后必须调用 `briefStateCommit(r, b, "<最终态描述>")`；无差异返回 null 不造空 commit，重跑幂等。
-- 需要远端同步的域（publish/release/archive）：补提交之后必须 `pushTip`/`git push`；push 失败一律响亮 `GIT_PUSH_FAILED`，禁止吞错续跑。archive 的 push 失败特例：归档提交已落本地 main，续跑不可经 plan（harness 读旧路径 BRIEF_NOT_FOUND），恢复需人工 push 一次。
+- 需要远端同步的域（publish/release/archive）：补提交之后必须 `pushTip`/`git push`；push 失败一律响亮 `GIT_PUSH_FAILED`，禁止吞错续跑。archive 的 push 失败特例：归档提交已落本地 main，续跑不可经 plan（harness 读旧路径 BRIEF_NOT_FOUND），恢复需人工 push 一次——其**根因是「brief 的位置」未被当作一等事实**；通用解法见 `worktree-brief-relocation.md`（brief 随 workspace 迁移 + harness 尊重 `locateBrief`），本条特例在迁移语义落地后可逐步收编。
 - `commit/publish/release.execute` 的 `briefCommit`（sha 或 null）与 `archive.execute` 的 `pushed` 是 stdout JSON 公开契约（additive），改动须同步 `zero-dirty` 前缀的契约测试。
 - review 阶段可用机械检查核对 execute 端点树是否干净（porcelain 为空）。
 
