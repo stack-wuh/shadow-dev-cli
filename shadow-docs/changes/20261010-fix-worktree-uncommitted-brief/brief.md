@@ -33,10 +33,16 @@
   "workflow": {
     "operation": null,
     "checkpoint": "78668be77d6bb210e98834655e29e99e11afd7c1",
-    "planHash": "373948e9200ae481eaddb674447eef9b99a5c70e97d05693065b0c9fd6aadba2",
+    "planHash": "0cf18aee99aeb7a3d1b0fc79d7e4f45e45eab0781135693c018b2045095919e1",
     "updatedAt": null,
     "lastError": null,
     "commit": {
+      "files": [
+        "shadow-docs/changes/20261010-fix-worktree-uncommitted-brief/brief.md"
+      ],
+      "message": "docs(shadow): 重算 PR 前 planHash（push 已完成，PR 待 token）"
+    },
+    "release": {
       "files": [
         "cli.mjs",
         "lib/commands.mjs",
@@ -48,7 +54,9 @@
         "shadow-docs/menu.md",
         "test/cli.test.mjs"
       ],
-      "message": "fix(worktree): 未提交的 brief 随专属 workspace 迁移，回收前搬回主树"
+      "message": "fix(worktree): 未提交的 brief 随专属 workspace 迁移，回收前搬回主树",
+      "title": "20261010-fix-worktree-uncommitted-brief",
+      "body": ""
     }
   },
   "knowledge": {
