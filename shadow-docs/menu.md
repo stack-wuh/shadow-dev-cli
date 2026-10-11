@@ -11,4 +11,5 @@
 | plan/execute 凭证 | planHash hash 漂移 norm changedFiles 脏工作区 porcelain trim 凭证链 | knowledge/plan-credential-chain.md |
 | 安装与分发 | install 安装器 shim 指针文件 LINK CURRENT 双轨 回滚 插件钩子 tarball Git Bash PowerShell requiresCommands 能力契约 missingCommands ARTIFACT_INCOMPATIBLE 版本错位 | knowledge/install-distribution.md |
 | issue 正文结构 | issue 正文 渲染器 issue-render issuePlan metadata 机器通道 bodySha256 sections 前缀 最小投影 统一结构 | knowledge/issue-body-contract.md |
+| brief 与 workspace 归属 | worktree 专属工作区 并行 workspace brief 迁移 relocate relocatedBack 未跟踪 唯一真相 状态分裂 归属树 载体豁免 WORKTREE_DIRTY BRIEF_NOT_FOUND | knowledge/worktree-brief-relocation.md |
 | brief 最终态提交 | 零 dirty 最终态 补提交 briefCommit pushed 空提交 archive push 断点续跑 | knowledge/brief-state-commit.md |

@@ -1290,6 +1290,71 @@ function setRating(root, level) {
 }
 const WT_HOME = () => fakeHomeWithConfig({})
 
+// ---- brief 随专属 workspace 迁移（20261010-fix-worktree-uncommitted-brief）----
+// fixture 的 brief 是未跟踪文件——这正是「刚立项」的真实状态：worktree add 从基线派生的新树里没有它。
+// 唯一真相必须随 workspace 迁移；复制会留下两份可各自演进的受管状态（数据分裂）。
+const briefOf = (tree, name) => JSON.parse(readFileSync(join(tree, 'shadow-docs', 'changes', name, 'brief.md'), 'utf8').match(/---\r?\n([\s\S]*?)\r?\n---/)[1])
+
+test('worktree: relocates an uncommitted brief so the workspace owns the single copy', () => {
+  const root = fixture()
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  const exec = run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
+  assert.equal(exec.status, 0, exec.stderr)
+  assert.equal(JSON.parse(exec.stdout).data.relocated, true, 'an uncommitted brief must be relocated')
+  assert.equal(existsSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')), false, 'primary checkout must not keep a second copy')
+  const b = briefOf(wt, 'sample')
+  assert.equal(b.branch, 'feat/sample'); assert.equal(b.workflow.worktree, wt); assert.equal(b.status, 'branched')
+  // I3 可发现性：在归属树里按 name 的命令可解析；跨树的 worktree 域也能定位
+  assert.equal(run(['task', 'list', '--name', 'sample', '--json'], wt, WT_HOME()).status, 0)
+  const insp = run(['worktree', 'inspect', '--name', 'sample', '--json'], root, WT_HOME())
+  assert.equal(insp.status, 0, insp.stderr)
+  assert.equal(JSON.parse(insp.stdout).data.recommendation, 'reuse')
+})
+
+test('worktree: remove relocates the uncommitted brief back and never treats it as dirty', () => {
+  const root = fixture()
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  assert.equal(run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME()).status, 0)
+  const planned = run(['worktree', 'remove', 'plan', '--name', 'sample', '--json'], root, WT_HOME())
+  assert.equal(planned.status, 0, planned.stderr)
+  assert.equal(JSON.parse(planned.stdout).data.dirty, false, 'the brief itself is a CLI carrier, not user work')
+  const removed = run(['worktree', 'remove', 'execute', '--name', 'sample', '--confirm', '--json'], root, WT_HOME())
+  assert.equal(removed.status, 0, removed.stderr)
+  assert.equal(JSON.parse(removed.stdout).data.relocatedBack, true)
+  assert.equal(existsSync(wt), false, 'workspace removed')
+  const b = briefOf(root, 'sample')
+  assert.equal(b.workflow.worktree, null, 'ownership returns to the primary checkout')
+})
+
+test('worktree: user work in the workspace still blocks removal with WORKTREE_DIRTY', () => {
+  const root = fixture()
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  assert.equal(run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME()).status, 0)
+  writeFileSync(join(wt, 'lib-new-file.js'), 'export const x = 1\n')
+  run(['worktree', 'remove', 'plan', '--name', 'sample', '--json'], root, WT_HOME())
+  const replanned = JSON.parse(run(['worktree', 'remove', 'plan', '--name', 'sample', '--json'], root, WT_HOME()).stdout)
+  assert.equal(replanned.data.dirty, true, '真实用户改动仍必须判脏——载体豁免不得放水')
+  const removed = run(['worktree', 'remove', 'execute', '--name', 'sample', '--confirm', '--json'], root, WT_HOME())
+  assert.equal(removed.status, 1)
+  assert.equal(JSON.parse(removed.stdout).error.code, 'WORKTREE_DIRTY', 'carrier exemption must not weaken the real dirty gate')
+})
+
+test('worktree: a tracked brief is left in place — steady state unchanged', () => {
+  const root = fixture()
+  // 稳态要真实造出来：先提交 brief，未跟踪态才不是「已入库的 change」
+  execFileSync('git', ['add', '--', 'shadow-docs/changes/sample/brief.md'], { cwd: root })
+  execFileSync('git', ['commit', '-qm', 'docs(shadow): track the sample brief'], { cwd: root })
+  const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
+  run(['worktree', 'plan', '--name', 'sample', '--path', wt, '--json'], root, WT_HOME())
+  const exec = run(['worktree', 'execute', '--name', 'sample', '--path', wt, '--confirm', '--json'], root, WT_HOME())
+  assert.equal(exec.status, 0, exec.stderr)
+  assert.equal(JSON.parse(exec.stdout).data.relocated, false, 'tracked briefs must not move — zero regression surface')
+  assert.equal(existsSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')), true)
+})
+
 test('worktree: execute creates a new worktree with derived branch and writes back the brief', () => {
   const root = fixture()
   const wt = mkdtempSync(join(tmpdir(), 'wt-')); rmSync(wt, { recursive: true, force: true })
@@ -1301,7 +1366,9 @@ test('worktree: execute creates a new worktree with derived branch and writes ba
   assert.equal(body.branch, 'feat/sample')
   assert.equal(existsSync(join(wt, 'README.md')), true, 'worktree checkout must contain repo files')
   assert.equal(execFileSync('git', ['-C', wt, 'branch', '--show-current'], { encoding: 'utf8' }).trim(), 'feat/sample')
-  const b = JSON.parse(readFileSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md'), 'utf8').match(/---\n([\s\S]*?)\n---/)[1])
+  // fixture 的 brief 未跟踪：迁移后唯一真相在工作树里（I1/I2），主树不应留副本
+  assert.equal(existsSync(join(root, 'shadow-docs', 'changes', 'sample', 'brief.md')), false, 'relocated: no second copy in the primary checkout')
+  const b = briefOf(wt, 'sample')
   assert.equal(b.branch, 'feat/sample')
   assert.equal(b.workflow.worktree, wt)
   assert.equal(b.status, 'branched')
