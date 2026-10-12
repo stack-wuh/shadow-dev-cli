@@ -4,7 +4,7 @@
   "name": "20261012-chore-release-v160",
   "type": "chore",
   "scope": "distribution",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "chore/20261012-chore-release-v160",
   "files": [
@@ -21,13 +21,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "fb7640a4a8af65537e1594c7ea17a5710356d857",
-    "verifiedAt": "2026-10-12T10:10:24.678Z"
+    "verifiedCommit": "26e3c90eb839bd354a1b833e42ed0e67944b6bbf",
+    "verifiedAt": "2026-10-12T11:11:11.287Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:61",
-    "planHash": "87e6e1b90e05e6539ad519fb86c097ecd84cb636483d79c8349a50cac1631436",
+    "checkpoint": "merged-pr:61",
+    "planHash": "679e8f1e577a8426b2ea15afc0dd52c2d2b3132d2de1612f4bd10918de6fe774",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -53,7 +53,7 @@
   "knowledge": {
     "action": "无需变更",
     "target": "knowledge/release-artifact-pipeline.md",
-    "reason": "常规 minor 发版载体，资产名契约与冒烟语义未变；README 安装 URL 随版本 bump 属既有同源要求，不新建卡"
+    "reason": "常规 minor 发版载体，资产名契约与冒烟语义未变，安装 URL 随版本 bump 属既有同源要求"
   }
 }
 ---

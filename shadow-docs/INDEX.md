@@ -29,5 +29,5 @@
 | 20261010-feature-brief-scope-amend | published | shadow-docs/changes/20261010-feature-brief-scope-amend/brief.md |
 | 20261010-fix-worktree-uncommitted-brief | published | shadow-docs/changes/20261010-fix-worktree-uncommitted-brief/brief.md |
 | 20261012-chore-gen-pr-template | ✅ 完成 | shadow-docs/changes/archive/20261012-chore-gen-pr-template/brief.md |
-| 20261012-chore-release-v160 | published | shadow-docs/changes/20261012-chore-release-v160/brief.md |
+| 20261012-chore-release-v160 | ✅ 完成 | shadow-docs/changes/archive/20261012-chore-release-v160/brief.md |
 | 20261012-fix-pr-params-required | ✅ 完成 | shadow-docs/changes/archive/20261012-fix-pr-params-required/brief.md |
