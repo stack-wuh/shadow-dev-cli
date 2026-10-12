@@ -4,7 +4,7 @@
   "name": "20261012-build-ci-release-publish",
   "type": "build",
   "scope": "ci",
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "build/20261012-build-ci-release-publish",
   "files": [
@@ -17,8 +17,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 66,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/66",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 67,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/67"
   },
   "review": {
     "conclusion": "passed",
@@ -27,7 +27,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:66",
+    "checkpoint": "pr:67",
     "planHash": "b7ad9485830fe6c9a3a0b1b78ec969a60c49e9a1245df799ae8f1faa231765f3",
     "updatedAt": null,
     "lastError": null,
