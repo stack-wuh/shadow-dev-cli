@@ -1209,6 +1209,33 @@ test('bind copies managed skills with a sidecar, blocks unmanaged targets, unbin
   assert.equal(run(['bind', 'unbind', '--host', 'claude-code', '--confirm', '--json'], root, env).status, 1, 'second unbind has nothing to remove')
 })
 
+test('bind: 技能目录含子目录时哈希与绑定仍成立（旧实现抛 EISDIR，issue #62）', () => {
+  const root = mkdtempSync(join(tmpdir(), 'bind-sub-'))
+  const artifact = buildArtifact(join(root, 'artifact'), '6.3.0')
+  mkdirSync(join(artifact, 'skills', 'shadow-dev-propose', 'references'), { recursive: true })
+  writeFileSync(join(artifact, 'skills', 'shadow-dev-propose', 'references', 'step-01.md'), '# step one\n')
+  const env = wfEnv(root)
+  assert.equal(run(['workflow', 'link', '--dir', artifact, '--confirm', '--json'], root, env).status, 0)
+  const p = run(['bind', 'plan', '--host', 'claude-code', '--json'], root, env)
+  assert.equal(p.status, 0, p.stderr)
+  const ex = run(['bind', 'execute', '--host', 'claude-code', '--plan-hash', JSON.parse(p.stdout).planHash, '--confirm', '--json'], root, env)
+  assert.equal(ex.status, 0, ex.stderr)
+  const target = join(root, 'home', '.claude', 'skills', 'shadow-dev-propose')
+  assert.equal(readFileSync(join(target, 'references', 'step-01.md'), 'utf8'), '# step one\n', '子目录随绑定递归复制')
+  const hashOf = () => JSON.parse(readFileSync(join(root, 'home', '.claude', 'skills', '.shadow-dev-workflow.json'), 'utf8')).skills['shadow-dev-propose'].hash
+  const h1 = hashOf()
+  assert.match(h1, /^[0-9a-f]{64}$/, 'sidecar 哈希形态不变')
+  // 反证：子目录内容必须参与指纹——只改 references 内文件，哈希必须变
+  writeFileSync(join(artifact, 'skills', 'shadow-dev-propose', 'references', 'step-01.md'), '# step one edited\n')
+  const p2 = JSON.parse(run(['bind', 'plan', '--host', 'claude-code', '--json'], root, env).stdout)
+  assert.equal(run(['bind', 'execute', '--host', 'claude-code', '--plan-hash', p2.planHash, '--confirm', '--json'], root, env).status, 0)
+  assert.notEqual(hashOf(), h1, '子目录内容变化必须反映到哈希')
+  // 确定性：同内容重绑两次，哈希逐字相同（与 readdir 返回序无关）
+  const rebind = () => { const q = JSON.parse(run(['bind', 'plan', '--host', 'claude-code', '--json'], root, env).stdout); assert.equal(run(['bind', 'execute', '--host', 'claude-code', '--plan-hash', q.planHash, '--confirm', '--json'], root, env).status, 0); return hashOf() }
+  assert.equal(rebind(), rebind(), '同内容重绑哈希必须稳定')
+  assert.equal(run(['bind', 'unbind', '--host', 'claude-code', '--confirm', '--json'], root, env).status, 0)
+  assert.equal(existsSync(target), false, 'unbind 递归删除含子目录的技能目录')
+}) 
 // ---- .shadow-dev/ config layers (20261005-feature-shadow-dev-config) ----
 function withProjectConfig(root, content) {
   mkdirSync(join(root, '.shadow-dev'), { recursive: true })
