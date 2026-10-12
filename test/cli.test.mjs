@@ -1209,6 +1209,41 @@ test('bind copies managed skills with a sidecar, blocks unmanaged targets, unbin
   assert.equal(run(['bind', 'unbind', '--host', 'claude-code', '--confirm', '--json'], root, env).status, 1, 'second unbind has nothing to remove')
 })
 
+// ---- 发布链唯一实现 scripts/publish.mjs (20261012-build-ci-release-publish) ----
+test('publish.mjs: 版本权威与资产名契约断言（含反例）', async () => {
+  const m = await import('../scripts/publish.mjs')
+  assert.equal(m.assertVersion('1.6.0', 'v1.6.0'), '1.6.0')
+  assert.equal(m.assertVersion('1.6.0', '1.6.0'), '1.6.0', 'tag 带不带 v 都要能判定')
+  assert.throws(() => m.assertVersion('1.6.0', 'v1.6.1'), /VERSION_AUTHORITY: package\.json 1\.6\.0 != tag 1\.6\.1/)
+  assert.throws(() => m.assertVersion('1.6.0', ''), /EMPTY_TAG/)
+  assert.equal(m.assertAssetName('shadow-dev-cli-v1.6.0.tar.gz'), 'shadow-dev-cli-v1.6.0.tar.gz')
+  assert.throws(() => m.assertAssetName('shadow-dev-cli-latest.tar.gz'), /ASSET_NAME_CONTRACT/)
+  assert.throws(() => m.assertAssetName('shadow-dev-cli-v1.6.0.tgz'), /ASSET_NAME_CONTRACT/, '扩展名写错等于没发布')
+}) 
+
+test('publish.mjs: 干跑与错误退出码——版本不符 exit 1、缺 tag exit 2', () => {
+  const root = dirname(CLI)
+  const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version
+  const go = (a) => spawnSync(process.execPath, ['scripts/publish.mjs', ...a], { cwd: root, encoding: 'utf8' })
+  const ok = go(['--tag', `v${version}`, '--dry-run', '--json'])
+  assert.equal(ok.status, 0, ok.stderr)
+  const p = JSON.parse(ok.stdout)
+  assert.equal(p.ok, true)
+  assert.match(p.name, /^shadow-dev-cli-v[0-9][0-9.]*\.tar\.gz$/, '资产名必须落在安装器的解析正则内')
+  assert.deepEqual(p.steps, ['version-authority ok ' + version, 'pack ' + p.name, 'asset-contract ok', 'upload skipped (dry-run)', 'read-back skipped (dry-run)'])
+  const bad = go(['--tag', 'v9.9.9', '--dry-run', '--json'])
+  assert.equal(bad.status, 1, bad.stderr)
+  assert.match(JSON.parse(bad.stdout).error, /VERSION_AUTHORITY/)
+  const none = go(['--dry-run', '--json'])
+  assert.equal(none.status, 2)
+}) 
+test('publish.yml: 只委派脚本，断言不得在 yml 里重抄第二份', () => {
+  const yml = readFileSync(join(dirname(CLI), '.github', 'workflows', 'publish.yml'), 'utf8')
+  assert.match(yml, /release:\n\s+types: \[published\]/, '必须由 release published 触发')
+  assert.match(yml, /node scripts\/publish\.mjs --tag/, 'yml 只留一行委派')
+  assert.doesNotMatch(yml, /pack\.mjs/, 'yml 里出现 pack 调用即为第二份实现')
+  assert.doesNotMatch(yml, /VERSION_AUTHORITY|ASSET_NAME_CONTRACT/, '断言文案不得从脚本之外复制进 yml')
+}) 
 // ---- .shadow-dev/ config layers (20261005-feature-shadow-dev-config) ----
 function withProjectConfig(root, content) {
   mkdirSync(join(root, '.shadow-dev'), { recursive: true })

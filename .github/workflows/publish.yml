@@ -1,0 +1,23 @@
+name: publish-release
+on:
+  release:
+    types: [published]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # 断言与上传的唯一实现是 scripts/publish.mjs；yml 只委派，不重抄逻辑
+      - name: 发布产物（版本权威 → pack → 资产名契约 → 上传 → 回读）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: node scripts/publish.mjs --tag "$TAG"
