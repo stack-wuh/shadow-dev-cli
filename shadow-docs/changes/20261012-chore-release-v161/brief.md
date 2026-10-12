@@ -4,7 +4,7 @@
   "name": "20261012-chore-release-v161",
   "type": "chore",
   "scope": "distribution",
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "chore/20261012-chore-release-v161",
   "files": [
@@ -16,8 +16,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 68,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/68",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 69,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/69"
   },
   "review": {
     "conclusion": "passed",
@@ -26,7 +26,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:68",
+    "checkpoint": "pr:69",
     "planHash": "b19e4aa825f8b9396d4225a839ae27d7f9f44fd4ccc03e0b3a4993c904398f75",
     "updatedAt": null,
     "lastError": null,
