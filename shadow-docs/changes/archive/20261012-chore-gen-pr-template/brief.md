@@ -4,7 +4,7 @@
   "name": "20261012-chore-gen-pr-template",
   "type": "chore",
   "scope": "tooling",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "chore/20261012-chore-gen-pr-template",
   "files": [
@@ -20,13 +20,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "9ebe22d6efd2f47d760b1ca2cceb84a4d4cd4f7a",
-    "verifiedAt": "2026-10-12T10:07:33.520Z"
+    "verifiedCommit": "314772e43ac54402c6aa84cff79310e5963dd340",
+    "verifiedAt": "2026-10-12T11:11:00.170Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:58",
-    "planHash": "e4766c6e4a2055d4a90fd2c9a963d7ee1b3f02470af5b987accd991dc4740c22",
+    "checkpoint": "merged-pr:58",
+    "planHash": "80a683d222bef6e3d7e688b9468c4be6b2f987e8d003f7025ac3c71fdbf27dd7",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -57,7 +57,7 @@
   "knowledge": {
     "action": "无需变更",
     "target": "knowledge/release-artifact-pipeline.md",
-    "reason": "仓库工具脚本的落位与命令目录边界已在脚本头注释与 brief 决策段写清，无新增长期事实，不建卡"
+    "reason": "工具脚本落位与命令目录边界已写进脚本头注释与 brief 决策段，无新增长期事实"
   }
 }
 ---
