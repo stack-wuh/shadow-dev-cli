@@ -4,7 +4,7 @@
   "name": "20261012-fix-bind-dirhash-subdirs",
   "type": "fix",
   "scope": "bind-domain",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20261012-fix-bind-dirhash-subdirs",
   "files": [
@@ -21,13 +21,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "3a5cf48b14c5246e948e432f3798a23e30638a22",
-    "verifiedAt": "2026-10-12T12:03:34.783Z"
+    "verifiedCommit": "ac2be3f54e6322ebee69149fbff1b3c4b95f1ba0",
+    "verifiedAt": "2026-10-12T12:34:39.292Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:64",
-    "planHash": "74c90b188b297d241380381b2d7c4ba048ee5c1e2a67f0476a344b1426478417",
+    "checkpoint": "merged-pr:64",
+    "planHash": "e7be7bce4a8a2666d617645c6d480968d979d3cfb2eade4cfa752994c76964c8",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -58,8 +58,8 @@
   },
   "knowledge": {
     "action": "无需变更",
-    "target": "knowledge/distribution-capability-contract.md",
-    "reason": "缺陷由代码与用例锁定；长期事实仍是产物递归收录与宿主绑定需内容指纹可复现，不新建卡"
+    "target": "knowledge/install-distribution.md",
+    "reason": "合并后在 main 上重认：dirHash 递归化已由子目录用例与三条反证锁定，windows 矩阵通过"
   }
 }
 ---
