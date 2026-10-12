@@ -4,7 +4,7 @@
   "name": "20261012-build-ci-release-publish",
   "type": "build",
   "scope": "ci",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "build/20261012-build-ci-release-publish",
   "files": [
@@ -22,13 +22,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "0ea41e42d80d70b164404374dc5e5b6eb453acd6",
-    "verifiedAt": "2026-10-12T12:14:43.336Z"
+    "verifiedCommit": "b6e27f4a7201ea4ed670e598f2b8bb41b6a22a9c",
+    "verifiedAt": "2026-10-12T12:34:51.560Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:67",
-    "planHash": "1c2284309b65ac863374831b87ed2dbea21fefac76f3d15734e201ba1a0234bd",
+    "checkpoint": "merged-pr:67",
+    "planHash": "5e96169b126d44197cfedc39f6b4ca87ee0b4ceac4a1f8573b29afb503ad228f",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -62,8 +62,8 @@
   },
   "knowledge": {
     "action": "无需变更",
-    "target": "knowledge/plan-credential-chain.md",
-    "reason": "发布链五步与单实现约束已由脚本头注释、brief 与三条测试锁定，知识卡不重复散文；既有 plan 凭证卡结论未被本 change 改写"
+    "target": "knowledge/install-distribution.md",
+    "reason": "合并后在 main 上重认：发布链五步单实现、LF/CRLF 双形态归一断言已绿（九腿矩阵全 success）"
   }
 }
 ---
