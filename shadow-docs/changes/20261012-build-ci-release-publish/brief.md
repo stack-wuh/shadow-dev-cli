@@ -28,7 +28,7 @@
   "workflow": {
     "operation": null,
     "checkpoint": "pr:67",
-    "planHash": "916d9b254d2a82bd1faac49aa089d2ffca4e670dc32cb27543a1bf53ef98cc2f",
+    "planHash": "4acf1e08c2e196594b5701a7390a895d7aadda7e1c62615fdce3ec828cc67850",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -57,7 +57,7 @@
         "shadow-docs/changes/20261012-build-ci-release-publish/brief.md",
         "test/cli.test.mjs"
       ],
-      "message": "build(ci): 工作流断言按 LF/CRLF 双形态判定——修 windows 矩阵假红"
+      "message": "build(ci): 行尾归一补第二步裸 CR 残留——修 windows job 二次假红"
     }
   },
   "knowledge": {
@@ -109,5 +109,8 @@ CLI 仓只有 `test.yml`，**没有发布工作流**。`gh release create v1.6.0
 - 单实现防回归：新增用例断 `publish.yml` 必须含 `node scripts/publish.mjs --tag` 且**不得**出现 `pack.mjs` / `VERSION_AUTHORITY` / `ASSET_NAME_CONTRACT` —— 断言一旦回拷进 yml 就有第二份实现，判红。
 - 套件：`node --test --test-name-pattern publish.mjs` → 2 绿 0 红；`--test-name-pattern publish.yml` → 1 绿 0 红；`--test-name-pattern publish` 全组（含既有 publish 域用例）无回归。
 - 门槛：**CI 抓到一个我本地没抓到的跨平台缺陷**——`test (windows-latest, 20/22/24)` 三条判红，原因是 `publish.yml` 断言写成 `/release:\n\s+types: \[published\]/` 而 Windows checkout 把工作流文件转成 CRLF，`\n` 匹配不上（mac/ubuntu 绿、windows 红）。mac/linux 20/22/24 六条全绿。
+- 第一轮修复不彻底（同一 job 再红）：Windows checkout 本就是 CRLF，我在测试里又叠一层换行转换，于是产出 CR CR LF；归一只吃掉一对 CR+LF，残留的裸 CR 紧贴在换行前，`/release:/` 后接换行的断言依旧不匹配。报错文案 `CRLF: 必须由 release published 触发` 即此。
+- 最终修复：归一分两步——先把 CRLF 转 LF，再把残留裸 CR 也转 LF。本地四形态自测（LF / CRLF / 裸 CR / CR+CR+LF）归一后全部匹配，未归一时 CRLF 与裸 CR 形态都不匹配，证明断言确实在验归一而非蒙对。
+- 教训留痕：跨平台行尾断言必须先归一再判，且叠加形态要防双重 CR；只测 LF 与想象中的 CRLF，在 Windows 上会假失败。
 - 修复：断言改为对 **LF 与 CRLF 两种行尾形态**分别归一后判定，使该缺陷在非 Windows 机器上也可复现（不再依赖只有 CI 才有的 CRLF 检出）。本地 `--test-name-pattern publish.yml` → 1 绿 0 红。
 - **未覆盖项（明说）**：`upload` 与 `read-back` 两步只在本 PR 合并、下一次真实 `gh release create` 触发 `publish-release` 后才被端到端执行；本轮无法自证（v1.6.0 的资产是我手工补的，正是本 change 要消除的动作）。验证点为：Actions 上 `publish-release` 绿 + `releases/tags/<新 tag>` 的 `assets` 恰有一个合法名资产。

@@ -1242,7 +1242,8 @@ test('publish.yml: 只委派脚本，断言不得在 yml 里重抄第二份', ()
   const raw = readFileSync(join(dirname(CLI), '.github', 'workflows', 'publish.yml'), 'utf8')
   const forms = [['LF', raw], ['CRLF', raw.replaceAll(String.fromCharCode(10), String.fromCharCode(13, 10))]]
   for (const [form, text] of forms) {
-    const yml = text.replaceAll(String.fromCharCode(13, 10), String.fromCharCode(10))
+    // 先 CRLF→LF，再把残留裸 CR 归一：Windows checkout 本就是 CRLF，测试叠加一层会产出 CR CR LF，只替换一对会残留裸 CR 而漏判
+    const yml = text.replace(/\r\n/g, String.fromCharCode(10)).replace(/\r/g, String.fromCharCode(10))
     assert.match(yml, /release:\n\s+types: \[published\]/, form + ': 必须由 release published 触发')
     assert.match(yml, /node scripts\/publish\.mjs --tag/, form + ': yml 只留一行委派')
     assert.doesNotMatch(yml, /pack\.mjs/, form + ': yml 里出现 pack 调用即为第二份实现')
