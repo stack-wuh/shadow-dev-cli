@@ -4,7 +4,7 @@
   "name": "20261012-fix-bind-dirhash-subdirs",
   "type": "fix",
   "scope": "bind-domain",
-  "status": "branched",
+  "status": "published",
   "baseBranch": "main",
   "branch": "fix/20261012-fix-bind-dirhash-subdirs",
   "files": [
@@ -16,8 +16,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 63,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/63",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 64,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/64"
   },
   "review": {
     "conclusion": "pending",
@@ -26,7 +26,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:63",
+    "checkpoint": "pr:64",
     "planHash": "b25dafe34dd4c43d6835f48e8da44c6c83183dc88673661e8d0d91fb44a43139",
     "updatedAt": null,
     "lastError": null,
