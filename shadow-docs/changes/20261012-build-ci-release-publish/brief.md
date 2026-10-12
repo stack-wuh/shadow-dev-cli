@@ -28,7 +28,7 @@
   "workflow": {
     "operation": null,
     "checkpoint": "pr:67",
-    "planHash": "b7ad9485830fe6c9a3a0b1b78ec969a60c49e9a1245df799ae8f1faa231765f3",
+    "planHash": "c8e9d314edce80d943e42d304902c78ffc67c4081c5a83d2d6c617a2049ca65e",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -51,6 +51,13 @@
       "message": "build(ci): 补发布链——release published 时 pack、断言资产名契约并上传回读",
       "title": "build(ci): 补发布链——release published 时 pack、断言资产名契约并上传回读",
       "body": "## 变更\n- `scripts/publish.mjs`（新增）：发布链的唯一实现，五步顺序固定——版本权威断言 → `pack.mjs` 产出 → 资产名契约断言 → `gh release upload --clobber` → 回读 release 的 `assets` 确认资产真的存在。导出 `assertVersion` / `assertAssetName` / `readVersion` / `packArtifact` / `readBackAssetNames` 供离线单测。\n- `.github/workflows/publish.yml`（新增）：`on: release: types: [published]`，`permissions: contents: write`，`run: node scripts/publish.mjs --tag \"$GITHUB_REF_NAME\"` —— 只有这一行委派，断言不在 yml 里重抄。\n- `test/cli.test.mjs`：三组用例（纯断言含反例、干跑与退出码、yml 单实现防回归）。\n\n## 影响\n- 行为/触发面变化：以后 `gh release create` 会自动补齐资产；漏资产的 release 会被回读步骤判红，而不是静默让安装器在消费侧报 `release asset not found`。**直接动因**：`v1.6.0` 发布后 `releases/tags/v1.6.0` 的 `assets` 是空数组，资产是我手工 `pack.mjs` + `gh release upload` 补的（v1.4.0/v1.5.0 各 1 资产，说明历史上一直是手工）。\n- 明确不受影响的范围：不改 `cli.mjs` 与 `lib/`，命令目录零变化（无新命令键）→ 插件 `requiresCommands` 与 `cliVersion` 判定不受影响；`install-cli.sh` 的解析逻辑不动；既有 `test.yml` 触发矩阵不变；`scripts/pack.mjs` 未改，只是被调用。\n- 幂等与安全：`--clobber` 使重复触发不产生第二个同名资产；上传前任一断言失败即非零退出不上传。\n- 回滚方式：revert 即删除 yml 与脚本，发版退回手工补资产的老路径。\n\n## 验证\n- 干跑：`node scripts/publish.mjs --tag v1.6.0 --dry-run --json` → `ok:true`，五步 steps 齐（后两步标 `skipped (dry-run)`）。\n- 反证版本权威：`--tag v9.9.9` → exit **1**，`VERSION_AUTHORITY: package.json 1.6.0 != tag 9.9.9`。\n- 反证参数契约：缺 `--tag` → exit **2** `--tag is required`。\n- 反证资产名契约：`shadow-dev-cli-latest.tar.gz` 与 `shadow-dev-cli-v1.6.0.tgz` 均抛 `ASSET_NAME_CONTRACT`；`shadow-dev-cli-v1.6.0.tar.gz` 放行。\n- 单实现防回归：用例断 `publish.yml` 必须含委派行，且**不得**出现 `pack.mjs` / `VERSION_AUTHORITY` / `ASSET_NAME_CONTRACT`——断言回拷进 yml 即判红。\n- 子集：`--test-name-pattern publish.mjs` 2 绿、`publish.yml` 1 绿、`publish` 全组（含既有 publish 域用例）无回归。\n- **未覆盖项（明说）**：`upload` 与 `read-back` 只在下一个真实 tag 上端到端执行；本轮无法自证。验收点是 Actions 的 `publish-release` 绿 + `releases/tags/<新 tag>` 恰有一个合法名资产。\n\n## 关联\n- Closes #66\n- brief: shadow-docs/changes/20261012-build-ci-release-publish/brief.md"
+    },
+    "commit": {
+      "files": [
+        "shadow-docs/changes/20261012-build-ci-release-publish/brief.md",
+        "test/cli.test.mjs"
+      ],
+      "message": "build(ci): 工作流断言按 LF/CRLF 双形态判定——修 windows 矩阵假红"
     }
   },
   "knowledge": {
@@ -101,5 +108,6 @@ CLI 仓只有 `test.yml`，**没有发布工作流**。`gh release create v1.6.0
 - 反证（资产名契约）：`assertAssetName("shadow-dev-cli-latest.tar.gz")` 与 `assertAssetName("shadow-dev-cli-v1.6.0.tgz")` 均抛 `ASSET_NAME_CONTRACT`；`shadow-dev-cli-v1.6.0.tar.gz` 放行。安装器按同一正则找资产，名字写错等于没发布。
 - 单实现防回归：新增用例断 `publish.yml` 必须含 `node scripts/publish.mjs --tag` 且**不得**出现 `pack.mjs` / `VERSION_AUTHORITY` / `ASSET_NAME_CONTRACT` —— 断言一旦回拷进 yml 就有第二份实现，判红。
 - 套件：`node --test --test-name-pattern publish.mjs` → 2 绿 0 红；`--test-name-pattern publish.yml` → 1 绿 0 红；`--test-name-pattern publish` 全组（含既有 publish 域用例）无回归。
-- 门槛：全量套件与 windows/macos/ubuntu × node 20/22/24 矩阵由 `test.yml` 在本 PR 上判定。
+- 门槛：**CI 抓到一个我本地没抓到的跨平台缺陷**——`test (windows-latest, 20/22/24)` 三条判红，原因是 `publish.yml` 断言写成 `/release:\n\s+types: \[published\]/` 而 Windows checkout 把工作流文件转成 CRLF，`\n` 匹配不上（mac/ubuntu 绿、windows 红）。mac/linux 20/22/24 六条全绿。
+- 修复：断言改为对 **LF 与 CRLF 两种行尾形态**分别归一后判定，使该缺陷在非 Windows 机器上也可复现（不再依赖只有 CI 才有的 CRLF 检出）。本地 `--test-name-pattern publish.yml` → 1 绿 0 红。
 - **未覆盖项（明说）**：`upload` 与 `read-back` 两步只在本 PR 合并、下一次真实 `gh release create` 触发 `publish-release` 后才被端到端执行；本轮无法自证（v1.6.0 的资产是我手工补的，正是本 change 要消除的动作）。验证点为：Actions 上 `publish-release` 绿 + `releases/tags/<新 tag>` 的 `assets` 恰有一个合法名资产。

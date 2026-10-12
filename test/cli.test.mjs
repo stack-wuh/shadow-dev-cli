@@ -1238,11 +1238,16 @@ test('publish.mjs: 干跑与错误退出码——版本不符 exit 1、缺 tag e
   assert.equal(none.status, 2)
 }) 
 test('publish.yml: 只委派脚本，断言不得在 yml 里重抄第二份', () => {
-  const yml = readFileSync(join(dirname(CLI), '.github', 'workflows', 'publish.yml'), 'utf8')
-  assert.match(yml, /release:\n\s+types: \[published\]/, '必须由 release published 触发')
-  assert.match(yml, /node scripts\/publish\.mjs --tag/, 'yml 只留一行委派')
-  assert.doesNotMatch(yml, /pack\.mjs/, 'yml 里出现 pack 调用即为第二份实现')
-  assert.doesNotMatch(yml, /VERSION_AUTHORITY|ASSET_NAME_CONTRACT/, '断言文案不得从脚本之外复制进 yml')
+  // Windows checkout 会把工作流文件转成 CRLF，断言必须先归一行尾——否则同一份 yml 在 mac/linux 绿、windows 红
+  const raw = readFileSync(join(dirname(CLI), '.github', 'workflows', 'publish.yml'), 'utf8')
+  const forms = [['LF', raw], ['CRLF', raw.replaceAll(String.fromCharCode(10), String.fromCharCode(13, 10))]]
+  for (const [form, text] of forms) {
+    const yml = text.replaceAll(String.fromCharCode(13, 10), String.fromCharCode(10))
+    assert.match(yml, /release:\n\s+types: \[published\]/, form + ': 必须由 release published 触发')
+    assert.match(yml, /node scripts\/publish\.mjs --tag/, form + ': yml 只留一行委派')
+    assert.doesNotMatch(yml, /pack\.mjs/, form + ': yml 里出现 pack 调用即为第二份实现')
+    assert.doesNotMatch(yml, /VERSION_AUTHORITY|ASSET_NAME_CONTRACT/, form + ': 断言文案不得从脚本之外复制进 yml')
+  }
 }) 
 // ---- .shadow-dev/ config layers (20261005-feature-shadow-dev-config) ----
 function withProjectConfig(root, content) {
