@@ -4,7 +4,7 @@
   "name": "20261012-chore-gen-pr-template",
   "type": "chore",
   "scope": "tooling",
-  "status": "branched",
+  "status": "published",
   "baseBranch": "main",
   "branch": "chore/20261012-chore-gen-pr-template",
   "files": [
@@ -15,8 +15,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 57,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/57",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 58,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/58"
   },
   "review": {
     "conclusion": "pending",
@@ -25,7 +25,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:57",
+    "checkpoint": "pr:58",
     "planHash": "d714e013d27540256f0503ea09e6fc4a09989846fa6e0cc345dd94bc71a9a345",
     "updatedAt": null,
     "lastError": null,
