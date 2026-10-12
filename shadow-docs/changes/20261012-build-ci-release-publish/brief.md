@@ -4,7 +4,7 @@
   "name": "20261012-build-ci-release-publish",
   "type": "build",
   "scope": "ci",
-  "status": "published",
+  "status": "committed",
   "baseBranch": "main",
   "branch": "build/20261012-build-ci-release-publish",
   "files": [
@@ -27,7 +27,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:67",
+    "checkpoint": "5855a704c63b3d143d5817f5a50b2e9ba61617d2",
     "planHash": "4acf1e08c2e196594b5701a7390a895d7aadda7e1c62615fdce3ec828cc67850",
     "updatedAt": null,
     "lastError": null,
