@@ -4,7 +4,7 @@
   "name": "20261012-chore-gen-pr-template",
   "type": "chore",
   "scope": "tooling",
-  "status": "published",
+  "status": "reviewed",
   "baseBranch": "main",
   "branch": "chore/20261012-chore-gen-pr-template",
   "files": [
@@ -19,14 +19,14 @@
     "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/58"
   },
   "review": {
-    "conclusion": "pending",
-    "verifiedCommit": null,
-    "verifiedAt": null
+    "conclusion": "passed",
+    "verifiedCommit": "9ebe22d6efd2f47d760b1ca2cceb84a4d4cd4f7a",
+    "verifiedAt": "2026-10-12T10:07:33.520Z"
   },
   "workflow": {
     "operation": null,
     "checkpoint": "pr:58",
-    "planHash": "d714e013d27540256f0503ea09e6fc4a09989846fa6e0cc345dd94bc71a9a345",
+    "planHash": "3f861ab0b17d49e3624b8f734a474259578a3d1aedf46b79d9e953b9748444a9",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -46,7 +46,18 @@
       "message": "chore(scripts): PR 模板生成器落进本仓 —— 逐字生成宿主模板并带段落与署名自检",
       "title": "chore(scripts): PR 模板生成器落进本仓 —— 逐字生成宿主模板并带段落与署名自检",
       "body": "## 变更\n- 新增 `scripts/gen-pr-template.mjs`：把插件仓 `norms/templates/pr-body.md` 逐字生成为宿主 `.github/PULL_REQUEST_TEMPLATE.md`；`--template` 显式真源 > `resolvedRoot()` 回退，`--check` 只比对不落盘。\n- 脚本内含三条自检：必需段落缺失、渲染区署名尾注、参数/真源缺失，各自对应稳定退出码。\n\n## 影响\n- 行为/触发面变化：无用户面 CLI 行为变化——脚本不进 `lib/commands.mjs` 命令目录，不动 `cli.mjs` 与 `lib/`，因此不影响插件 `requiresCommands` 与 `cliVersion` 契约。\n- 明确不受影响的范围：`release`/`publish`/`archive`/`bind`/`workflow` 各域零改动；`x.wuh.site` 的宿主模板由本次执行同步到 1430B（与真源逐字一致）。\n- 副作用消除：该文件此前以未跟踪状态躺在仓内，会挡 `sync`/`archive` 的 `DIRTY_WORKTREE`；入库后不再挡。\n\n## 验证\n- 命令与结果：`node scripts/gen-pr-template.mjs --template … --out …` → `generated … (1430B)`；`--check` → `ok … 一致`（exit 0）。缺 `--out` → exit 2；`--template` 指向不存在文件 → exit 3 且不落盘；夹具模板缺 `## 影响` → exit 1 指明真源路径。\n- 署名自检：夹具在 HTML 注释里写 `Co-authored-by:` → exit 0（不误伤规则文字）；同词落到渲染区 → exit 1 并点名 `norms/pr-message.md` 第 5 条。\n- 未覆盖项（明说）：脚本不写进 CI 门，跨仓漂移目前靠人工执行 `--check` 判定；若要把 `--check` 挂进 workflow 的门，另立 change。\n\n## 关联\n- Closes #57\n- brief: shadow-docs/changes/20261012-chore-gen-pr-template/brief.md"
+    },
+    "commit": {
+      "files": [
+        "shadow-docs/changes/20261012-chore-gen-pr-template/brief.md"
+      ],
+      "message": "chore(scripts): brief 收口——任务勾选、结果段回填与 review 结论"
     }
+  },
+  "knowledge": {
+    "action": "无需变更",
+    "target": "knowledge/release-artifact-pipeline.md",
+    "reason": "仓库工具脚本的落位与命令目录边界已在脚本头注释与 brief 决策段写清，无新增长期事实，不建卡"
   }
 }
 ---
@@ -69,8 +80,8 @@ PR 模板的生成脚本按分工属 shadow-dev-cli（确定性脚本动作）�
 
 ## 任务
 
-- [ ] task-1 — `scripts/gen-pr-template.mjs` — 落盘脚本与自检（缺段/署名尾注/参数错误/真源缺失四条退出路径）
-- [ ] task-2 — `docs` — 确认与插件侧 `norms/pr-message.md` 的调用写法一致（`--template` + `--out`）
+- [x] task-1 — `scripts/gen-pr-template.mjs` — 落盘脚本与自检（缺段/署名尾注/参数错误/真源缺失四条退出路径）
+- [x] task-2 — `docs` — 确认与插件侧 `norms/pr-message.md` 的调用写法一致（`--template` + `--out`）
 
 ## 结果
 
