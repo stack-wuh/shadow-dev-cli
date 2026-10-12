@@ -4,7 +4,7 @@
   "name": "20261012-fix-pr-params-required",
   "type": "fix",
   "scope": "cli-infrastructure",
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "fix/20261012-fix-pr-params-required",
   "files": [
@@ -21,8 +21,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 55,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/55",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 56,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/56"
   },
   "review": {
     "conclusion": "passed",
@@ -31,7 +31,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:55",
+    "checkpoint": "pr:56",
     "planHash": "f9122813b655aaf4eb82d16f33f191da5118e88e9967a9538a2c43ab1329a1ff",
     "updatedAt": null,
     "lastError": null,
