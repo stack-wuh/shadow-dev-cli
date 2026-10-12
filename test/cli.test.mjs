@@ -6,6 +6,7 @@ import { platform, tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
+import { norm, hash } from '../lib/plan.mjs'
 
 const CLI = fileURLToPath(new URL('../cli.mjs', import.meta.url))
 
@@ -1825,4 +1826,68 @@ test('workflow capability contract: link refuses an artifact requiring commands 
   assert.equal(refused.status, 1, refused.stdout)
   assert.equal(JSON.parse(refused.stdout).error.code, 'ARTIFACT_INCOMPATIBLE')
   assert.equal(existsSync(join(prefixDir, 'LINK')), false, 'LINK is not written on refusal')
+})
+
+test('planHash 只认参数内容：CLI 自身状态推进与 HEAD 快照不作废 plan', () => {
+  const base = {
+    name: 'sample',
+    files: ['src/example.js'],
+    message: 'feat: x',
+    title: 'sample',
+    body: '',
+    branch: 'feat/sample',
+    baseBranch: 'main',
+    head: 'aaa1111',
+    brief: { name: 'sample', status: 'reviewed', workflow: { operation: null, checkpoint: null, planHash: null, updatedAt: null, lastError: null } },
+    repo: { root: '/tmp/x', branch: 'feat/sample', head: 'aaa1111', clean: true, changedFiles: [] },
+  }
+  const h = (d) => hash({ command: 'release', data: norm(d) })
+  const planned = h(base)
+
+  // 1) CLI 自己的账簿推进 + HEAD 前移（半失败后再重试的真实形态）不得作废 plan
+  const advanced = JSON.parse(JSON.stringify(base))
+  advanced.head = 'bbb2222'
+  advanced.repo.head = 'bbb2222'
+  advanced.repo.clean = false
+  advanced.repo.changedFiles = ['shadow-docs/changes/sample/brief.md']
+  advanced.brief.workflow = {
+    operation: 'release',
+    checkpoint: 'bbb2222',
+    planHash: planned,
+    updatedAt: '2026-10-12T00:00:00.000Z',
+    lastError: 'GIT_PUSH_FAILED',
+    release: { files: ['src/example.js'], message: 'feat: x', title: 'sample', body: '' },
+  }
+  assert.equal(h(advanced), planned, '账簿字段与 HEAD 快照不应参与 planHash 重算')
+
+  // 2) 真正的参数变化仍必须判红
+  for (const mutate of [
+    (d) => { d.files = ['src/other.js'] },
+    (d) => { d.message = 'feat: y' },
+    (d) => { d.title = 'other' },
+    (d) => { d.body = 'Closes #1' },
+  ]) {
+    const changed = JSON.parse(JSON.stringify(base))
+    mutate(changed)
+    assert.notEqual(h(changed), planned, '参数变化必须改变 planHash')
+  }
+})
+
+test('release execute 缺凭证时不落提交（避免已提交未推送的半状态）', () => {
+  const root = fixture()
+  execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:owner/repo.git'], { cwd: root })
+  execFileSync('git', ['add', '--', 'shadow-docs'], { cwd: root })
+  execFileSync('git', ['commit', '-m', 'docs: seed brief'], { cwd: root })
+  const cleanEnv = { GITHUB_TOKEN: '', GH_TOKEN: '' }
+  const before = execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
+
+  const planned = run(['release', 'plan', '--name', 'sample', '--files', 'README.md', '--message', 'chore: x', '--title', 'sample', '--json'], root, cleanEnv)
+  assert.equal(planned.status, 0, planned.stderr)
+
+  const executed = run(['release', 'execute', '--name', 'sample', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, cleanEnv)
+  assert.notEqual(executed.status, 0)
+  assert.equal(JSON.parse(executed.stdout).error.code, 'GITHUB_TOKEN_REQUIRED')
+
+  const after = execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
+  assert.equal(after, before, '缺凭证失败不得留下任何本地提交')
 })
