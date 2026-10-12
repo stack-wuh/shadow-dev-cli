@@ -4,7 +4,7 @@
   "name": "20261012-chore-release-v161",
   "type": "chore",
   "scope": "distribution",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "chore/20261012-chore-release-v161",
   "files": [
@@ -21,13 +21,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "2a066cbe5302fc60995b7e6058db3792d01f8e54",
-    "verifiedAt": "2026-10-12T12:36:23.430Z"
+    "verifiedCommit": "24071447434c0083cc247afbe06b09d4b2610953",
+    "verifiedAt": "2026-10-12T12:41:31.739Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:69",
-    "planHash": "b19e4aa825f8b9396d4225a839ae27d7f9f44fd4ccc03e0b3a4993c904398f75",
+    "checkpoint": "merged-pr:69",
+    "planHash": "16ec46aa6c619821ffd8036bbc8157bfa13555240537aaa3ce43317d10a3ce63",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
@@ -53,7 +53,7 @@
   "knowledge": {
     "action": "无需变更",
     "target": "knowledge/install-distribution.md",
-    "reason": "常规 patch 发版载体；发布链事实已由 #67 的脚本与用例承载，不新建卡"
+    "reason": "发布链已实测产出资产（uploader=github-actions[bot]），既有分发卡的结论未被改写"
   }
 }
 ---
@@ -89,4 +89,8 @@ v1.6.0 之后 main 已合入两项对外可见的变化：`fix(bind)` 让 `bind 
 - 差异面：`git diff --stat` = `README.md | 2 +-`、`package.json | 2 +-`，共 2 文件 2 增 2 删，无其它文件被牵动。
 - 版本一致：`node -pe "require('./package.json').version"` = `1.6.1`；README 安装 URL 已指向 `/v1.6.1/`，全仓再无 `/v1.6.0/` 引用（`git grep v1\.6\.0` 为空）。
 - 覆盖范围核对：`git rev-list --count v1.6.0..HEAD` 实取 4 个提交，其中对外可见的两项为 `#64`（bind dirHash）与 `#67`（发布链）；另两笔是它们的归档提交，不属内容变更，按规则跳过并在此写明。
-- **待回填**：tag `v1.6.1` 与 Release 落地后，核对 Actions 的 `publish-release` 结论、`releases/tags/v1.6.1` 的资产名与数量。这一步是本载体的真实交付物。
+- **发布链端到端已实测通过（本载体的真实交付物）**：
+  - tag `v1.6.1` → `2407144`，`gh release create v1.6.1 --generate-notes` 触发 `release: published`。
+  - Actions run `38250490213` job `publish` **success**，脚本输出逐字为：`ok v1.6.1 — version-authority ok 1.6.1 → pack shadow-dev-cli-v1.6.1.tar.gz → asset-contract ok → upload ok → read-back ok [shadow-dev-cli-v1.6.1.tar.gz]`——五步全部执行，回读确认资产在位。
+  - `releases/tags/v1.6.1` 资产：`shadow-dev-cli-v1.6.1.tar.gz`，48411B，**uploader = `github-actions[bot]`**。这条是自动化成立的硬证据：与 v1.6.0 那次由我手工 `pack.mjs` + `gh release upload` 补齐（uploader 为个人账号）形成对照。
+  - `releases/latest` 现为 `v1.6.1`；README 的 `/v1.6.1/bootstrap.sh` 链接自 tag 落地起可解析。
