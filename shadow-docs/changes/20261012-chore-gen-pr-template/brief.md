@@ -4,7 +4,7 @@
   "name": "20261012-chore-gen-pr-template",
   "type": "chore",
   "scope": "tooling",
-  "status": "committed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "chore/20261012-chore-gen-pr-template",
   "files": [
@@ -25,8 +25,8 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "4031709159a0b320466eb04c6f52921a3bb5e62f",
-    "planHash": "3f861ab0b17d49e3624b8f734a474259578a3d1aedf46b79d9e953b9748444a9",
+    "checkpoint": "pr:58",
+    "planHash": "e4766c6e4a2055d4a90fd2c9a963d7ee1b3f02470af5b987accd991dc4740c22",
     "updatedAt": null,
     "lastError": null,
     "issuePlan": {
