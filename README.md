@@ -100,7 +100,7 @@ shadow-dev archive execute --name 20260925-fix-login --confirm
 ```bash
 shadow-dev commit plan  --name <名称> --files a.ts,b.ts --message "fix: x"   # 只提交不开 PR
 shadow-dev commit execute --name <名称> --confirm                            # 参数已持久化,免重传
-shadow-dev publish plan  --name <名称> --title "标题"                        # 只推分支开 PR,不提交
+shadow-dev publish plan  --name <名称> --title "fix(ci): x" --body-file pr-body.md   # 只推分支开 PR,不提交（标题与正文必填）
 shadow-dev publish execute --name <名称> --confirm
 shadow-dev issue plan  --name <名称> --labels fix                            # 由 brief 确定性渲染 issue
 shadow-dev issue execute --name <名称> --confirm

@@ -762,7 +762,7 @@ test('publish pushes normally and creates a PR when none exists', () => {
     { method: 'POST', path: '/repos/owner/repo/pulls', body: { number: 9, html_url: 'https://github.test/pulls/9' } },
   ])
   try {
-    const args = ['--name', 'sample', '--title', 'Feature']
+    const args = ['--name', 'sample', '--title', 'Feature', '--body', 'Details']
     const planned = run(['publish', 'plan', ...args, '--json'], root)
     const result = run(['publish', 'execute', ...args, '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
     assert.equal(result.status, 0, result.stderr)
@@ -784,7 +784,7 @@ test('publish reuses an already merged PR instead of opening a duplicate', () =>
   const merged = { number: 525, state: 'closed', merged_at: '2026-10-09T11:20:00Z', html_url: 'https://github.test/pulls/525', base: { ref: 'main' } };
   const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls?', body: [merged] }])
   try {
-    const args = ['--name', 'sample', '--title', 'Feature']
+    const args = ['--name', 'sample', '--title', 'Feature', '--body', 'Details']
     const planned = run(['publish', 'plan', ...args, '--json'], root)
     const result = run(['publish', 'execute', ...args, '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
     assert.equal(result.status, 0, result.stderr)
@@ -807,7 +807,7 @@ test('pr inspect recovers the PR by branch when the brief lost its pullRequest f
     assert.equal(JSON.parse(result.stdout).data.number, 12)
   } finally { api.close() }
 })
-test('publish defaults the PR body to Closes #N when the brief has an issue', () => {
+test('publish 正文由调用方显式给出：CLI 不再自动补一行 Closes', () => {
   const root = fixture()
   addOrigin(root)
   execFileSync('git', ['switch', '-c', 'feat/sample'], { cwd: root })
@@ -820,7 +820,7 @@ test('publish defaults the PR body to Closes #N when the brief has an issue', ()
     { method: 'POST', path: '/repos/owner/repo/pulls', body: { number: 9, html_url: 'https://github.test/pulls/9' } },
   ])
   try {
-    const args = ['--name', 'sample', '--title', 'Feature']
+    const args = ['--name', 'sample', '--title', 'Feature', '--body', 'Closes #5\n\n## 变更\n- 显式正文']
     const planned = run(['publish', 'plan', ...args, '--json'], root)
     const result = run(['publish', 'execute', ...args, '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
     assert.equal(result.status, 0, result.stderr)
@@ -836,7 +836,7 @@ test('publish reuses an existing open PR', () => {
   updateBrief(root, data => { data.github.repository = 'owner/repo'; data.branch = 'feat/sample' })
   const api = apiStub([{ method: 'GET', path: '/repos/owner/repo/pulls?', body: [{ number: 9, html_url: 'https://github.test/pulls/9' }] }])
   try {
-    const args = ['--name', 'sample']
+    const args = ['--name', 'sample', '--title', 'Feature', '--body', 'Details']
     const planned = run(['publish', 'plan', ...args, '--json'], root)
     const result = run(['publish', 'execute', ...args, '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
     assert.equal(result.status, 0, result.stderr)
@@ -951,7 +951,7 @@ test('release execute commits, pushes and creates the PR in one step, then reuse
     { method: 'POST', path: '/repos/owner/repo/pulls', body: { number: 9, html_url: 'https://github.test/pulls/9' } },
   ])
   try {
-    const args = ['--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md', '--message', 'feat: sample', '--title', 'Sample PR']
+    const args = ['--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md', '--message', 'feat: sample', '--title', 'Sample PR', '--body', '## 变更\n- sample']
     const planned = run(['release', 'plan', ...args, '--json'], root)
     assert.equal(planned.status, 0, planned.stderr)
     const result = run(['release', 'execute', '--name', 'sample', '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
@@ -1629,7 +1629,7 @@ test('zero-dirty: release execute commits brief published state with PR number a
     { method: 'POST', path: '/repos/owner/repo/pulls', body: { number: 9, html_url: 'https://github.test/pulls/9' } },
   ])
   try {
-    const planned = run(['release', 'plan', '--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md,a.js', '--message', 'feat: sample', '--title', 'Sample PR', '--json'], root)
+    const planned = run(['release', 'plan', '--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md,a.js', '--message', 'feat: sample', '--title', 'Sample PR', '--body', '## 变更\n- sample', '--json'], root)
     assert.equal(planned.status, 0, planned.stderr)
     const result = run(['release', 'execute', '--name', 'sample', '--confirm', '--json'], root, { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url })
     assert.equal(result.status, 0, result.stderr)
@@ -1705,7 +1705,7 @@ test('zero-dirty: release rerun cycles converge — each replan drift lands exac
   ])
   try {
     const env = { GITHUB_TOKEN: 'token', SHADOW_GITHUB_API_URL: api.url }
-    assert.equal(run(['release', 'plan', '--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md,a.js', '--message', 'feat: sample', '--title', 'Sample PR', '--json'], root).status, 0)
+    assert.equal(run(['release', 'plan', '--name', 'sample', '--files', 'shadow-docs/changes/sample/brief.md,a.js', '--message', 'feat: sample', '--title', 'Sample PR', '--body', '## 变更\n- sample', '--json'], root).status, 0)
     assert.equal(run(['release', 'execute', '--name', 'sample', '--confirm', '--json'], root, env).status, 0)
     const commits = execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
     assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }), '')
@@ -1828,6 +1828,42 @@ test('workflow capability contract: link refuses an artifact requiring commands 
   assert.equal(existsSync(join(prefixDir, 'LINK')), false, 'LINK is not written on refusal')
 })
 
+test('PR 标题与正文必须显式给出：缺省即 PR_PARAMS_REQUIRED，CLI 不再代劳', () => {
+  const root = fixture()
+  updateBrief(root, data => { data.github.repository = 'owner/repo'; data.branch = 'feat/sample' })
+
+  // 1) 两者皆缺 → 拒绝，缺失项一次列全
+  const bare = run(['release', 'plan', '--name', 'sample', '--files', 'README.md', '--message', 'fix: x', '--json'], root)
+  assert.notEqual(bare.status, 0)
+  assert.equal(JSON.parse(bare.stdout).error.code, 'PR_PARAMS_REQUIRED')
+  assert.match(JSON.stringify(JSON.parse(bare.stdout).error), /--title and --body/)
+
+  // 2) 只给标题 → 仍拒绝，且不产出回退标题
+  const half = run(['release', 'plan', '--name', 'sample', '--files', 'README.md', '--message', 'fix: x', '--title', 'fix(ci): x', '--json'], root)
+  assert.equal(JSON.parse(half.stdout).error.code, 'PR_PARAMS_REQUIRED')
+  assert.ok(!half.stdout.includes('"title": "sample"'), '标题绝不回退变更名')
+
+  // 3) publish 同受门控
+  const pub = run(['publish', 'plan', '--name', 'sample', '--json'], root)
+  assert.equal(JSON.parse(pub.stdout).error.code, 'PR_PARAMS_REQUIRED')
+
+  // 4) --body 与 --body-file 同传 → 冲突拒绝
+  writeFileSync(join(root, 'pr-body.md'), '## 变更\n- 显式正文\n')
+  const both = run(['release', 'plan', '--name', 'sample', '--files', 'README.md', '--message', 'fix: x', '--title', 'fix(ci): x', '--body', 'b', '--body-file', 'pr-body.md', '--json'], root)
+  assert.equal(JSON.parse(both.stdout).error.code, 'BODY_PARAM_CONFLICT')
+
+  // 5) --body-file 逐字进 plan
+  const viaFile = run(['release', 'plan', '--name', 'sample', '--files', 'README.md', '--message', 'fix: x', '--title', 'fix(ci): x', '--body-file', 'pr-body.md', '--json'], root)
+  assert.equal(viaFile.status, 0, viaFile.stderr)
+  const planned = JSON.parse(viaFile.stdout)
+  assert.match(planned.data.body, /显式正文/)
+
+  // 6) 断点续跑：再 plan 不重传参数，回退上一次 plan 的持久值（仍非 CLI 代劳）
+  const again = run(['release', 'plan', '--name', 'sample', '--json'], root)
+  assert.equal(again.status, 0, again.stderr)
+  assert.equal(JSON.parse(again.stdout).data.title, 'fix(ci): x')
+  assert.equal(JSON.parse(again.stdout).data.body, planned.data.body)
+}) 
 test('planHash 只认参数内容：CLI 自身状态推进与 HEAD 快照不作废 plan', () => {
   const base = {
     name: 'sample',
@@ -1881,7 +1917,7 @@ test('release execute 缺凭证时不落提交（避免已提交未推送的半�
   const cleanEnv = { GITHUB_TOKEN: '', GH_TOKEN: '' }
   const before = execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
 
-  const planned = run(['release', 'plan', '--name', 'sample', '--files', 'README.md', '--message', 'chore: x', '--title', 'sample', '--json'], root, cleanEnv)
+  const planned = run(['release', 'plan', '--name', 'sample', '--files', 'README.md', '--message', 'chore: x', '--title', 'sample', '--body', '## 变更\n- chore', '--json'], root, cleanEnv)
   assert.equal(planned.status, 0, planned.stderr)
 
   const executed = run(['release', 'execute', '--name', 'sample', '--plan-hash', JSON.parse(planned.stdout).planHash, '--confirm', '--json'], root, cleanEnv)
