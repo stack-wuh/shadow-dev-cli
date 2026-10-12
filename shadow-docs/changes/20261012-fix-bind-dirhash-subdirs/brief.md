@@ -4,7 +4,7 @@
   "name": "20261012-fix-bind-dirhash-subdirs",
   "type": "fix",
   "scope": "bind-domain",
-  "status": "reviewed",
+  "status": "committed",
   "baseBranch": "main",
   "branch": "fix/20261012-fix-bind-dirhash-subdirs",
   "files": [
@@ -26,7 +26,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:64",
+    "checkpoint": "3167a1ab2669c7fba9a87bcf2a84e4f25a5230c4",
     "planHash": "e9215fe7d47a55662ee97533ed3d64f2490c93b0cb2c28768e0796869375a0da",
     "updatedAt": null,
     "lastError": null,
