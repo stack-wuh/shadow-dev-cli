@@ -4,7 +4,7 @@
   "name": "20261012-fix-pr-params-required",
   "type": "fix",
   "scope": "cli-infrastructure",
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20261012-fix-pr-params-required",
   "files": [
@@ -26,13 +26,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "5dcafa0f0c7925a7fd30eacb7099119d705465aa",
-    "verifiedAt": "2026-10-12T09:45:20.619Z"
+    "verifiedCommit": "c00f030fb51956c258d2d571eb1e1b5ccff9b0e6",
+    "verifiedAt": "2026-10-12T10:01:38.006Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:56",
-    "planHash": "f9122813b655aaf4eb82d16f33f191da5118e88e9967a9538a2c43ab1329a1ff",
+    "checkpoint": "merged-pr:56",
+    "planHash": "a79c610a28f1044ea9fe48e1f060e0ab850a7497b5ef3d35b1ae9759b8042955",
     "updatedAt": null,
     "lastError": null,
     "release": {

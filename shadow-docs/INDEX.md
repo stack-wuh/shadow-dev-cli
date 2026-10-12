@@ -26,3 +26,6 @@
 | 20261008-fix-brief-final-state-commit | ✅ 完成 | shadow-docs/changes/archive/20261008-fix-brief-final-state-commit/brief.md |
 | 20261008-fix-ci-bind-tar-harness | ✅ 完成 | shadow-docs/changes/archive/20261008-fix-ci-bind-tar-harness/brief.md |
 | 20261009-chore-release-v150 | ✅ 完成 | shadow-docs/changes/archive/20261009-chore-release-v150/brief.md |
+| 20261010-feature-brief-scope-amend | published | shadow-docs/changes/20261010-feature-brief-scope-amend/brief.md |
+| 20261010-fix-worktree-uncommitted-brief | published | shadow-docs/changes/20261010-fix-worktree-uncommitted-brief/brief.md |
+| 20261012-fix-pr-params-required | ✅ 完成 | shadow-docs/changes/archive/20261012-fix-pr-params-required/brief.md |
