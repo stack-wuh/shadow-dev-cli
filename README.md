@@ -166,7 +166,7 @@ shadow-dev issue execute --name <名称> --confirm
 |------|------|
 | `change create \| approve \| amend \| list` | 创建 / 批准变更 brief；`amend` 登记实现期扩面；`list` 列变更（`--all` 含归档、`--archived` 只列归档） |
 | `branch plan \| execute` | 从基线分支建功能分支 |
-| `sync plan \| execute` | fast-forward 同步上游（分叉时拒绝自动合并） |
+| `sync plan \| execute` | fast-forward 同步上游：基线取 `--base-branch` > brief > 当前分支；squash 收口可无 brief，此时 `--plan-hash` 为唯一凭证（分叉仍拒绝自动合并） |
 | `conflict inspect` | 检查活动变更间的文件重叠 |
 | `worktree inspect` | 列出 git worktree（分支/脏净/归属），按 brief 复杂度评级给并行建议 |
 | `worktree plan \| execute` | 为变更创建独立 worktree（无分支则随 add 派生；不切换当前工作区） |
