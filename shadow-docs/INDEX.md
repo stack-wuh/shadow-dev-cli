@@ -34,4 +34,5 @@
 | 20261012-chore-release-v161 | ✅ 完成 | shadow-docs/changes/archive/20261012-chore-release-v161/brief.md |
 | 20261012-fix-bind-dirhash-subdirs | ✅ 完成 | shadow-docs/changes/archive/20261012-fix-bind-dirhash-subdirs/brief.md |
 | 20261012-fix-pr-params-required | ✅ 完成 | shadow-docs/changes/archive/20261012-fix-pr-params-required/brief.md |
+| 20261013-chore-release-v170 | ✅ 完成 | shadow-docs/changes/archive/20261013-chore-release-v170/brief.md |
 | 20261013-fix-sync-briefless-base | ✅ 完成 | shadow-docs/changes/archive/20261013-fix-sync-briefless-base/brief.md |
