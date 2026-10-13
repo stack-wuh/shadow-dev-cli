@@ -4,7 +4,7 @@
   "name": "20261013-fix-sync-briefless-base",
   "type": "fix",
   "scope": null,
-  "status": "published",
+  "status": "archived",
   "baseBranch": "main",
   "branch": "fix/20261013-fix-sync-briefless-base",
   "files": [
@@ -22,13 +22,13 @@
   },
   "review": {
     "conclusion": "passed",
-    "verifiedCommit": "e5d83a9a04a68003f2b82e21c08f02703a4955f9",
-    "verifiedAt": "2026-10-13T04:19:09.758Z"
+    "verifiedCommit": "92515bedade3cde4feaea0964ea4153d0e8e89b5",
+    "verifiedAt": "2026-10-13T06:15:39.080Z"
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "pr:70",
-    "planHash": "2291cd9e4f75d0e08deb989a055249cf3b69ed3e1509d9d3fb166582f5d1565b",
+    "checkpoint": "merged-pr:70",
+    "planHash": "de77c6f0e1f4f91bb3fa6f696d8ccb486e2bdd26be90970ffa0881942c0158e3",
     "updatedAt": null,
     "lastError": null,
     "release": {
@@ -133,6 +133,15 @@ squash 合并后收口时 `sync` 两头卡死（issue #59），#65 已证明浅�
 **未覆盖项（按门槛层显式登记）**
 
 - 全量 `npm test` 本机约 270s > 60s，未在本机跑全量；由本仓 `test.yml`（`pull_request`）在全量套件上补，PR checks 未绿前不视为交付完成。
-- 真实 squash 现场的端到端复演就在本 change 自己的收口阶段执行：合并后在 main 上以 `sync plan` + `sync execute --plan-hash` 新形态收口，届时把真实输出追加到本节。
+- 真实 squash 现场的端到端复演已在本 change 收口阶段执行，实测输出见下方「收口阶段端到端复演」小节（已覆盖，不再是缺口）。
 - #59 的 `verifiedCommit` 漂移那一半本 change 不覆盖（设计内的门），在 issue 中拆分记录。
 
+### 收口阶段端到端复演（2026-10-13，真实 squash 现场）
+
+- 现场：`gh pr merge 70 --squash` 之后本地 main `behind=1`，`shadow-docs/changes/20261013-fix-sync-briefless-base/` 不在盘上——这就是 #59 描述的收口点。
+- **负例（线上 v1.6.1 旧码，同一条命令）**：`node cli.mjs sync plan --name 20261013-fix-sync-briefless-base --json` → `{"ok":false,"code":"BRIEF_NOT_FOUND"}`。现象在真实仓库复现，不是推演。
+- 新码来源：`git archive origin/main | tar -x -C <临时目录>`（工作树当时还是旧码，不能用它跑新形态），再对该工作树执行：
+  - `sync plan --json`（无 `--name`）→ `{"ok":true,"base":"main","upstream":"origin/main","name":null,"to":"92515bedade3…","planHash":"e5b68fc8fc46…"}`
+  - `sync execute --plan-hash e5b68fc8… --confirm --json` → `{"ok":true,"head":"92515bedade3cde4feaea0964ea4153d0e8e89b5"}`
+- 收敛核对：`behind-after=0`、`head=92515be`、`brief-on-disk=yes`、`git status --short` 为空。结论「squash 收口不再需要人工 `git merge --ff-only`」由推定变成实测。
+- 副作用记录：ff 之后工作树即新码（核对 `lib/domains/sync.mjs` 含 `--base-branch` 与 `SYNC_UPSTREAM_NOT_FOUND`）；`node cli.mjs version` 仍报 `1.6.1`——版本 bump 属下一次发布载体，不在本 change。
