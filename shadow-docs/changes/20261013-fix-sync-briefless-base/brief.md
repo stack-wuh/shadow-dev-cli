@@ -4,7 +4,7 @@
   "name": "20261013-fix-sync-briefless-base",
   "type": "fix",
   "scope": null,
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "fix/20261013-fix-sync-briefless-base",
   "files": [
@@ -17,8 +17,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 70,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/70"
   },
   "review": {
     "conclusion": "passed",
@@ -27,7 +27,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
+    "checkpoint": "pr:70",
     "planHash": "2291cd9e4f75d0e08deb989a055249cf3b69ed3e1509d9d3fb166582f5d1565b",
     "updatedAt": null,
     "lastError": null,
