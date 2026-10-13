@@ -4,7 +4,7 @@
   "name": "20261013-chore-release-v170",
   "type": "chore",
   "scope": null,
-  "status": "reviewed",
+  "status": "published",
   "baseBranch": "main",
   "branch": "chore/20261013-chore-release-v170",
   "files": [
@@ -16,8 +16,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": null,
     "issueUrl": null,
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 71,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/71"
   },
   "review": {
     "conclusion": "passed",
@@ -26,7 +26,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": null,
+    "checkpoint": "pr:71",
     "planHash": "a1727b3471a490117a60681e1c04a6bc30a27d9546504b43ca925da8507d2378",
     "updatedAt": null,
     "lastError": null,
