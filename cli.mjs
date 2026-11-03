@@ -92,7 +92,7 @@ async function handle(r, p, o) {
   if (Object.hasOwn(DOMAINS, d)) {
     const nested = a === 'rebuild' || d === 'blog' || (d === 'worktree' && a === 'remove')
     const verb = nested ? s : a, c = nested ? `${d}.${a}` : d
-    const mod = d === 'worktree' && a === 'remove' ? { planData: worktree.removePlanData, present: worktree.removePresent, execute: worktree.removeExecute, locateBrief: worktree.locateBrief } : DOMAINS[d]
+    const mod = d === 'worktree' && a === 'remove' ? { planData: worktree.removePlanData, present: worktree.removePresent, execute: worktree.removeExecute, locateBrief: worktree.locateBrief } : d === 'blog' && a === 'unpublish' ? { planData: blog.unpublishPlanData, present: blog.present, execute: blog.unpublishExecute } : DOMAINS[d]
     if (verb === 'plan') return await planDomain(c, mod, r, o)
     if (verb === 'execute') return { ok: true, command: `${c}.execute`, data: await executeDomain(c, mod, r, o) }
   }
