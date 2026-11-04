@@ -13,3 +13,4 @@
 | issue 正文结构 | issue 正文 渲染器 issue-render issuePlan metadata 机器通道 bodySha256 sections 前缀 最小投影 统一结构 | knowledge/issue-body-contract.md |
 | brief 与 workspace 归属 | worktree 专属工作区 并行 workspace brief 迁移 relocate relocatedBack 未跟踪 唯一真相 状态分裂 归属树 载体豁免 WORKTREE_DIRTY BRIEF_NOT_FOUND | knowledge/worktree-brief-relocation.md |
 | brief 最终态提交 | 零 dirty 最终态 补提交 briefCommit pushed 空提交 archive push 断点续跑 | knowledge/brief-state-commit.md |
+| 视频配音 TTS | TTS 语音合成 配音 音频 音色 qwen-audio-3.0-tts-plus Token Plan sk-sp- 百炼 DashScope SpeechSynthesizer longanhuan final.wav WAV 头 采样率 分段 InvalidApiKey | knowledge/qwen-tts-voiceover.md |
