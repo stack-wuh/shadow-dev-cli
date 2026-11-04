@@ -2,3 +2,7 @@ node_modules/
 .DS_Store
 *.log
 dist/
+
+# qwen-tts 配音工具（本地产物与密钥不入库）
+.api_key
+tts-output/
