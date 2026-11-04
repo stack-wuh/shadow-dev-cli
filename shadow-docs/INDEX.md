@@ -36,3 +36,5 @@
 | 20261012-fix-pr-params-required | ✅ 完成 | shadow-docs/changes/archive/20261012-fix-pr-params-required/brief.md |
 | 20261013-chore-release-v170 | ✅ 完成 | shadow-docs/changes/archive/20261013-chore-release-v170/brief.md |
 | 20261013-fix-sync-briefless-base | ✅ 完成 | shadow-docs/changes/archive/20261013-fix-sync-briefless-base/brief.md |
+| 20261103-feature-blog-unpublish | ✅ 完成 | shadow-docs/changes/archive/20261103-feature-blog-unpublish/brief.md |
+| 20261104-chore-release-v190 | published | shadow-docs/changes/20261104-chore-release-v190/brief.md |
