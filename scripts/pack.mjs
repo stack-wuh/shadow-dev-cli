@@ -12,8 +12,13 @@ const staging = join(dist, 'staging')
 
 rmSync(dist, { recursive: true, force: true })
 mkdirSync(staging, { recursive: true })
-for (const f of ['cli.mjs', 'lib', 'package.json', 'README.md', 'LICENSE']) {
-  cpSync(join(root, f), join(staging, 'shadow-dev-cli', f), { recursive: true })
+// tools/ 随产物分发（shadow-dev-tts 技能的载体），但本地密钥与合成产物永不入包
+const SKIP = new Set(['.api_key', 'tts-output', 'node_modules', '.DS_Store'])
+for (const f of ['cli.mjs', 'lib', 'package.json', 'README.md', 'LICENSE', 'tools']) {
+  cpSync(join(root, f), join(staging, 'shadow-dev-cli', f), {
+    recursive: true,
+    filter: (src) => !src.split('/').some((seg) => SKIP.has(seg)),
+  })
 }
 const artifact = join(dist, `shadow-dev-cli-v${version}.tar.gz`)
 try {
