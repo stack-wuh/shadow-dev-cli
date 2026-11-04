@@ -4,7 +4,7 @@
   "name": "20261104-chore-release-v1100",
   "type": "chore",
   "scope": "install-distribution",
-  "status": "branched",
+  "status": "published",
   "baseBranch": "main",
   "branch": "chore/20261104-chore-release-v1100",
   "files": [
@@ -17,8 +17,8 @@
     "repository": "stack-wuh/shadow-dev-cli",
     "issue": 80,
     "issueUrl": "https://github.com/stack-wuh/shadow-dev-cli/issues/80",
-    "pullRequest": null,
-    "pullRequestUrl": null
+    "pullRequest": 81,
+    "pullRequestUrl": "https://github.com/stack-wuh/shadow-dev-cli/pull/81"
   },
   "review": {
     "conclusion": "pending",
@@ -27,7 +27,7 @@
   },
   "workflow": {
     "operation": null,
-    "checkpoint": "issue:80",
+    "checkpoint": "pr:81",
     "planHash": "a160091559340d297dcb1a1d703ac211d08de6f267f628d1b5c6ad7b1c77e2aa",
     "updatedAt": null,
     "lastError": null,
